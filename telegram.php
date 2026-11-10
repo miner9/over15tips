@@ -38,15 +38,21 @@ function footer(): string {
     return $f;
 }
 
-function cmd_tips(): void {
-    $today = date('Y-m-d');
-    $tips = array_values(array_filter(analyse(load_data()),
-        fn($t) => date('Y-m-d', $t['ts']) === $today && $t['conf'] >= TG_MIN_CONF));
+function cmd_tips(bool $next = false): void {
+    $all = array_values(array_filter(analyse(load_data()), fn($t) => $t['conf'] >= TG_MIN_CONF));
+    if ($next && $all) { // επόμενη μέρα με αγώνες (π.χ. σε διακοπή εθνικών)
+        $today = min(array_map(fn($t) => date('Y-m-d', $t['ts']), $all));
+    } else {
+        $today = date('Y-m-d');
+    }
+    $tips = array_values(array_filter($all, fn($t) => date('Y-m-d', $t['ts']) === $today));
+    usort($tips, fn($a, $b) => $b['conf'] <=> $a['conf']);
     $tips = array_slice($tips, 0, TG_MAX_TIPS);
     if (!$tips) { echo "Καμία επιλογή για σήμερα.\n"; return; }
     usort($tips, fn($a, $b) => $a['ts'] <=> $b['ts']);
 
-    $msg = "⚽ <b>OVER 1.5 — " . e(gr_day(time())) . ' ' . date('d/m') . "</b>\n";
+    $ts0 = strtotime($today);
+    $msg = "⚽ <b>OVER 1.5 — " . e(gr_day($ts0)) . ' ' . date('d/m', $ts0) . "</b>\n";
     $msg .= "<i>Με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας</i>\n\n";
     foreach ($tips as $t) {
         $icon = $t['conf'] >= 85 ? '🔥' : '✅';
@@ -103,6 +109,7 @@ function cmd_results(): void {
 
 match ($argv[1] ?? '') {
     'tips'    => cmd_tips(),
+    'next'    => cmd_tips(true),
     'results' => cmd_results(),
-    default   => print("Χρήση: php telegram.php tips|results\n"),
+    default   => print("Χρήση: php telegram.php tips|next|results\n"),
 };

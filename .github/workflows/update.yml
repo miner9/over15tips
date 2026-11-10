@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       telegram:
-        description: 'Telegram: none / tips / results'
+        description: 'Telegram: none / tips / next / results'
         default: 'none'
 
 permissions:
@@ -38,6 +38,10 @@ jobs:
       - name: Telegram — tips
         if: github.event.schedule == '30 8 * * *' || inputs.telegram == 'tips'
         run: php telegram.php tips
+
+      - name: Telegram — επόμενη αγωνιστική
+        if: inputs.telegram == 'next'
+        run: php telegram.php next
 
       - name: Build site
         run: php build.php
