@@ -2,10 +2,13 @@
 require_once __DIR__ . '/lib.php';
 
 $page = $_GET['p'] ?? 'home';
-if (!in_array($page, ['home', 'method', 'privacy', 'terms', 'match', 'results'], true)) $page = 'home';
+if (!in_array($page, ['home', 'over25', 'gg', 'method', 'privacy', 'terms', 'match', 'results'], true)) $page = 'home';
 
+$LIST_PAGES = ['home' => 'o15', 'over25' => 'o25', 'gg' => 'gg'];
+$mk = $LIST_PAGES[$page] ?? 'o15';
+$ML = MARKETS[$mk]['label'];
 $data = load_data();
-$tips = in_array($page, ['home', 'match']) ? analyse($data) : [];
+$tips = isset($LIST_PAGES[$page]) ? analyse($data, $mk) : ($page === 'match' ? analyse($data, 'all') : []);
 $top3 = array_slice($tips, 0, 3);
 $stats = track_stats(load_tracked(), 30, 70);
 $M = null;
@@ -24,13 +27,23 @@ $titles = [
     'privacy' => 'Πολιτική Απορρήτου & Cookies | ' . SITE_NAME,
     'terms'   => 'Όροι Χρήσης & Υπεύθυνο Παιχνίδι | ' . SITE_NAME,
     'results' => 'Ιστορικό Επιτυχίας Προγνωστικών Over 1.5 | ' . SITE_NAME,
+    'over25'  => 'Over 2.5 Προγνωστικά Σήμερα — Αγώνες με 3+ Γκολ | ' . SITE_NAME,
+    'gg'      => 'Γκολ-Γκολ (GG) Προγνωστικά Σήμερα — Σκοράρουν και οι δύο | ' . SITE_NAME,
 ];
-$desc = 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.';
+$HERO = [
+    'o15' => ['Over 1.5 γκολ — τα πιο σίγουρα παιχνίδια της αγωνιστικής', 'για 2+ γκολ'],
+    'o25' => ['Over 2.5 γκολ — οι αγώνες με τα περισσότερα γκολ', 'για 3+ γκολ'],
+    'gg'  => ['Γκολ-Γκολ — σκοράρουν και οι δύο ομάδες', 'για γκολ και από τις δύο ομάδες'],
+];
+$desc = $page === 'over25' ? 'Δωρεάν προγνωστικά Over 2.5 γκολ για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε 8 ευρωπαϊκά πρωταθλήματα.'
+     : ($page === 'gg' ? 'Δωρεάν προγνωστικά Γκολ-Γκολ (GG) για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε 8 ευρωπαϊκά πρωταθλήματα.'
+     : 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.');
 $canon = SITE_URL . ($page === 'home' ? '/' : '/' . $page);
 if ($M) {
-    $mn = $M['home']['n'] . ' – ' . $M['away']['n'];
-    $titles['match'] = $mn . ' Προγνωστικά Over 1.5 (' . date('d/m', $M['ts']) . ') | ' . SITE_NAME;
-    $desc = $mn . ' ' . date('d/m/Y', $M['ts']) . ', ' . $M['leagueName'] . ': ' . $M['conf'] . '% πιθανότητα για Over 1.5 γκολ. Ανάλυση των τελευταίων 3 αγώνων, αναμενόμενα γκολ και δίκαιη απόδοση.';
+    $mn = $M['home']['g'] . ' – ' . $M['away']['g'];
+    $mnL = $M['home']['n'] . ' – ' . $M['away']['n'];
+    $titles['match'] = $mn . ' Προγνωστικά (' . date('d/m', $M['ts']) . ') Over 1.5, Over 2.5, GG | ' . SITE_NAME;
+    $desc = $mn . ' (' . $mnL . ') ' . date('d/m/Y', $M['ts']) . ', ' . $M['leagueName'] . ': Over 1.5 ' . $M['m']['o15']['conf'] . '%, Over 2.5 ' . $M['m']['o25']['conf'] . '%, Γκολ-Γκολ ' . $M['m']['gg']['conf'] . '%. Ανάλυση των τελευταίων 3 αγώνων.';
     $canon = SITE_URL . '/agonas/' . match_slug($M);
 }
 
@@ -96,7 +109,7 @@ h1{font-size:clamp(28px,4.2vw,44px);line-height:1.1;letter-spacing:-.03em;font-w
 /* layout */
 .main{display:grid;grid-template-columns:1fr 320px;gap:28px;padding:28px 0 60px}
 @media(max-width:980px){.main{grid-template-columns:1fr}}
-@media(max-width:600px){.hd{gap:12px}.logo{white-space:nowrap;font-size:16px}nav a{padding:6px 8px;font-size:13px}nav a+a+a{display:none}header .btn-tg{display:none}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{min-width:0;padding:10px 12px}.stat .v{font-size:18px}.stat .l{font-size:11px}.hero{padding:30px 0 22px}.wrap{padding:0 14px}}
+@media(max-width:600px){.hd{gap:12px}.logo{white-space:nowrap;font-size:16px}nav a{padding:6px 8px;font-size:13px}nav{overflow-x:auto;white-space:nowrap;scrollbar-width:none}header .btn-tg{display:none}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{min-width:0;padding:10px 12px}.stat .v{font-size:18px}.stat .l{font-size:11px}.hero{padding:30px 0 22px}.wrap{padding:0 14px}}
 
 /* filters */
 .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
@@ -235,21 +248,23 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <header><div class="wrap hd">
   <a href="./" class="logo"><span class="logo-mark">1.5</span><span><?= preg_replace('/(\d[\d.]*)/', '<b>$1</b>', e(SITE_NAME)) ?></span></a>
   <nav>
-    <a href="./" class="<?= $page === 'home' ? 'on' : '' ?>">Προγνωστικά</a>
+    <a href="./" class="<?= $page === 'home' ? 'on' : '' ?>">Over 1.5</a>
+    <a href="?p=over25" class="<?= $page === 'over25' ? 'on' : '' ?>">Over 2.5</a>
+    <a href="?p=gg" class="<?= $page === 'gg' ? 'on' : '' ?>">Γκολ-Γκολ</a>
     <a href="?p=results" class="<?= $page === 'results' ? 'on' : '' ?>">Ιστορικό</a>
     <a href="?p=method" class="<?= $page === 'method' ? 'on' : '' ?>">Μεθοδολογία</a>
   </nav>
   <?php if (TELEGRAM_URL): ?><a class="btn-tg" href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.3 9.6 19c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.8.4 1.3.2 1.5-.7L20.9 5c.3-1.2-.4-1.7-1.2-1.4L3.4 9.9c-1.1.4-1.1 1.1-.2 1.4l4.2 1.3 9.7-6.1c.5-.3.9-.1.5.2"/></svg>Telegram</a><?php endif; ?>
 </div></header>
 
-<?php if ($page === 'home'): ?>
+<?php if (isset($LIST_PAGES[$page])): ?>
 <section class="hero"><div class="wrap">
   <span class="eyebrow"><span class="dot"></span>Ενημέρωση <?= e($updated) ?></span>
-  <h1>Over 1.5 γκολ — τα πιο σίγουρα παιχνίδια της αγωνιστικής</h1>
-  <p class="sub">Αναλύουμε αυτόματα τα τελευταία 3 παιχνίδια κάθε ομάδας σε <?= count(LEAGUES) ?> κορυφαία πρωταθλήματα και βαθμολογούμε κάθε αγώνα για 2+ γκολ.</p>
+  <h1><?= e($HERO[$mk][0]) ?></h1>
+  <p class="sub">Αναλύουμε αυτόματα τα τελευταία 3 παιχνίδια κάθε ομάδας σε <?= count(LEAGUES) ?> κορυφαία πρωταθλήματα και βαθμολογούμε κάθε αγώνα <?= e($HERO[$mk][1]) ?>.</p>
   <div class="stats">
     <div class="stat"><div class="v"><?= $totalUpcoming ?></div><div class="l">Αγώνες αναλύθηκαν</div></div>
-    <div class="stat"><div class="v"><?= count($tips) ?></div><div class="l">Προτάσεις Over 1.5</div></div>
+    <div class="stat"><div class="v"><?= count($tips) ?></div><div class="l">Προτάσεις <?= e($ML) ?></div></div>
     <div class="stat"><div class="v"><?= count(array_filter($tips, fn($t) => $t['conf'] >= 85)) ?></div><div class="l">Κορυφαίες (85%+)</div></div>
   </div>
   <?php if ($stats['n'] >= 5): ?><div class="trk">📊 Επιτυχία τελευταίων 30 ημερών (70%+): <b><?= pct($stats['w'], $stats['n']) ?></b> σε <?= $stats['n'] ?> προτάσεις · <a href="?p=results">Δες όλο το ιστορικό →</a></div>
@@ -268,7 +283,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
       </div>
       <span class="spacer"></span>
       <select id="lg"><option value="all">Όλα τα πρωταθλήματα</option><?php foreach (LEAGUES as $c => $n): ?><option value="<?= e($c) ?>"><?= e($n) ?></option><?php endforeach; ?></select>
-      <select id="mn"><option value="60">60%+</option><option value="70" selected>70%+</option><option value="80">80%+</option><option value="85">85%+</option></select>
+      <select id="mn"><?php foreach ([55, 60, 70, 80, 85] as $v): if ($v < MARKETS[$mk]['min']) continue; ?><option value="<?= $v ?>" <?= $v === ($mk === 'o15' ? 70 : 55) ? 'selected' : '' ?>><?= $v ?>%+</option><?php endforeach; ?></select>
     </div>
     <p class="count" id="cnt" style="margin:-6px 0 12px"></p>
 
@@ -283,16 +298,16 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
           <span class="badge <?= $tc ?>"><?= e($tl) ?></span>
         </div>
         <div class="c-body">
-          <div class="team home"><?= crest($t['home']) ?><div><div class="nm"><?= e($t['home']['n']) ?></div><div class="hint">Γηπεδούχος</div></div></div>
-          <div class="ring" style="--p:<?= $t['conf'] ?>;--rc:<?= $rc ?>"><div><span><b><?= $t['conf'] ?>%</b><small>OVER 1.5</small></span></div></div>
-          <div class="team away"><?= crest($t['away']) ?><div><div class="nm"><?= e($t['away']['n']) ?></div><div class="hint">Φιλοξενούμενος</div></div></div>
+          <div class="team home"><?= crest($t['home']) ?><div><div class="nm"><?= e($t['home']['g']) ?></div><div class="hint">Γηπεδούχος</div></div></div>
+          <div class="ring" style="--p:<?= $t['conf'] ?>;--rc:<?= $rc ?>"><div><span><b><?= $t['conf'] ?>%</b><small><?= e(MARKETS[$mk]['short']) ?></small></span></div></div>
+          <div class="team away"><?= crest($t['away']) ?><div><div class="nm"><?= e($t['away']['g']) ?></div><div class="hint">Φιλοξενούμενος</div></div></div>
         </div>
         <div class="form">
-          <div><h4>Τελευταία 3 · <?= e($t['home']['n']) ?> <span><?= $t['H']['hits'] ?>/3</span></h4><ul><?= form_rows($t['H']) ?></ul></div>
-          <div><h4>Τελευταία 3 · <?= e($t['away']['n']) ?> <span><?= $t['A']['hits'] ?>/3</span></h4><ul><?= form_rows($t['A']) ?></ul></div>
+          <div><h4>Τελευταία 3 · <?= e($t['home']['g']) ?> <span><?= $t['m'][$mk]['H'] ?>/3</span></h4><ul><?= form_rows($t['H'], $mk) ?></ul></div>
+          <div><h4>Τελευταία 3 · <?= e($t['away']['g']) ?> <span><?= $t['m'][$mk]['A'] ?>/3</span></h4><ul><?= form_rows($t['A'], $mk) ?></ul></div>
         </div>
         <div class="c-foot">
-          <span>Over σε <b><?= $t['hits'] ?>/6</b></span>
+          <span><?= e($ML) ?> σε <b><?= $t['hits'] ?>/6</b></span>
           <span>Αναμ. γκολ <b><?= number_format($t['xg'], 2) ?></b></span>
           <span>Δίκαιη απόδοση <b><?= number_format($t['fair'], 2) ?></b></span>
           <a class="more" href="<?= e(match_url($t)) ?>">Πλήρης ανάλυση →</a>
@@ -309,9 +324,9 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
     <?php if ($top3): $prod = array_product(array_column($top3, 'fair')); ?>
     <div class="box">
       <h3>⚡ Κουπόνι ημέρας</h3>
-      <p class="s">Οι 3 υψηλότερες επιλογές Over 1.5</p>
+      <p class="s">Οι 3 υψηλότερες επιλογές <?= e($ML) ?></p>
       <ul class="slip"><?php foreach ($top3 as $t): ?>
-        <li><div><div class="t"><?= e($t['home']['n']) ?> – <?= e($t['away']['n']) ?></div><div class="m"><?= e(gr_day($t['ts'])) ?> <?= date('H:i', $t['ts']) ?> · <?= $t['conf'] ?>%</div></div><span class="o">Over 1.5</span></li>
+        <li><div><div class="t"><?= e($t['home']['g']) ?> – <?= e($t['away']['g']) ?></div><div class="m"><?= e(gr_day($t['ts'])) ?> <?= date('H:i', $t['ts']) ?> · <?= $t['conf'] ?>%</div></div><span class="o"><?= e($ML) ?></span></li>
       <?php endforeach; ?></ul>
       <div class="slip-tot"><span>Συνδυαστική πιθανότητα</span><span><?= round(100 / $prod) ?>%</span></div>
       <?= aff_btn('Παίξε το κουπόνι') ?>
@@ -345,11 +360,11 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 
 <?php elseif ($page === 'match'): $t = $M; [$tc, $tl] = tier($t['conf']);
   $rc = $tc === 'top' ? 'var(--gold)' : ($tc === 'strong' ? 'var(--acc)' : 'var(--blue)');
-  $H = $t['H']; $A = $t['A']; $hn = $t['home']['n']; $an = $t['away']['n']; ?>
+  $H = $t['H']; $A = $t['A']; $hn = $t['home']['g']; $an = $t['away']['g']; ?>
 <div class="wrap page" style="max-width:860px">
   <div class="crumbs"><a href="./">Προγνωστικά</a> › <?= e($t['leagueName']) ?> › <?= e($hn) ?> – <?= e($an) ?></div>
-  <h1><?= e($hn) ?> – <?= e($an) ?>: Προγνωστικά Over 1.5</h1>
-  <p style="color:var(--mut)"><?= e($t['leagueName']) ?> · <?= ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][(int)date('w', $t['ts'])] ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας)</p>
+  <h1><?= e($hn) ?> – <?= e($an) ?>: Προγνωστικά</h1>
+  <p style="color:var(--mut)"><?= e($t['home']['n']) ?> – <?= e($t['away']['n']) ?> · <?= e($t['leagueName']) ?> · <?= ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][(int)date('w', $t['ts'])] ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας)</p>
   <div class="mhead">
     <div class="team home"><?= crest($t['home']) ?><div class="nm"><?= e($hn) ?></div><div class="hint">Γηπεδούχος</div></div>
     <div class="ring" style="--p:<?= $t['conf'] ?>;--rc:<?= $rc ?>"><div><span><b><?= $t['conf'] ?>%</b><small>OVER 1.5</small></span></div></div>
@@ -361,6 +376,11 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
     <div class="stat"><div class="v"><?= number_format($t['fair'], 2) ?></div><div class="l">Δίκαιη απόδοση</div></div>
     <div class="stat"><div class="v" style="font-size:16px"><?= e($tl) ?></div><div class="l">Κατηγορία</div></div>
   </div>
+  <h2>Όλες οι αγορές</h2>
+  <div style="overflow-x:auto"><table class="rtab"><tr><th>Αγορά</th><th>Πιθανότητα</th><th>Στα πρόσφατα</th><th>Δίκαιη απόδοση</th></tr>
+  <?php foreach (MARKETS as $k => $info): $x = $t['m'][$k]; ?>
+    <tr><td><b><?= e($info['label']) ?></b></td><td class="sc" style="color:<?= $x['conf'] >= 75 ? 'var(--acc)' : ($x['conf'] >= 60 ? 'var(--tx)' : 'var(--mut)') ?>"><?= $x['conf'] ?>%</td><td><?= $x['hits'] ?>/6</td><td class="sc"><?= number_format($x['fair'], 2) ?></td></tr>
+  <?php endforeach; ?></table></div>
   <?= ad_slot(ADSENSE_SLOT_TOP, 'ad-top') ?>
   <h2>Ανάλυση</h2>
   <p>Η <b><?= e($hn) ?></b> είδε 2+ γκολ σε <?= $H['hits'] ?> από τα τελευταία 3 παιχνίδια πρωταθλήματος, με μέσο όρο <?= number_format($H['avgTot'], 1) ?> γκολ ανά αγώνα (<?= number_format($H['avgFor'], 1) ?> υπέρ, <?= number_format($H['avgAg'], 1) ?> κατά).
@@ -372,12 +392,13 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   </div>
   <?php if (TELEGRAM_URL): ?><div class="cta-tg"><div><b>Θες τα tips κάθε πρωί στο κινητό;</b><p>Δωρεάν κανάλι Telegram με τις ισχυρότερες επιλογές και τα αποτελέσματα.</p></div><a class="btn-tg" href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener">Μπες στο κανάλι</a></div><?php endif; ?>
   <?php if (AFF_URL): ?><p><?= aff_btn(AFF_OFFER) ?></p><?php endif; ?>
-  <?php $others = array_slice(array_values(array_filter($tips, fn($o) => $o['id'] !== $t['id'] && date('Y-m-d', $o['ts']) === date('Y-m-d', $t['ts']))), 0, 8);
+  <?php $tips = array_values(array_filter($tips, fn($o) => $o['conf'] >= MIN_SHOW));
+  $others = array_slice(array_values(array_filter($tips, fn($o) => $o['id'] !== $t['id'] && date('Y-m-d', $o['ts']) === date('Y-m-d', $t['ts']))), 0, 8);
   if (!$others) $others = array_slice(array_values(array_filter($tips, fn($o) => $o['id'] !== $t['id'])), 0, 8);
   if ($others): ?>
   <h2>Άλλα προγνωστικά Over 1.5</h2>
   <ul><?php foreach ($others as $o): ?>
-    <li><a href="<?= e(match_url($o)) ?>" style="color:var(--acc)"><?= e($o['home']['n']) ?> – <?= e($o['away']['n']) ?></a> · <?= e(gr_day($o['ts'])) ?> · <?= $o['conf'] ?>%</li>
+    <li><a href="<?= e(match_url($o)) ?>" style="color:var(--acc)"><?= e($o['home']['g']) ?> – <?= e($o['away']['g']) ?></a> · <?= e(gr_day($o['ts'])) ?> · <?= $o['conf'] ?>%</li>
   <?php endforeach; ?></ul><?php endif; ?>
   <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
   <p style="font-size:12px;color:var(--mut2);margin-top:18px">Στατιστική εκτίμηση, όχι εγγύηση. 21+ | Παίξε υπεύθυνα.</p>
@@ -415,6 +436,8 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <h2>3. Τελικό σκορ</h2>
   <div class="formula">Βαθμός = 50% × (Over/6) + 50% × P(2+ γκολ)</div>
   <ul><li><b>85%+</b> Κορυφαία επιλογή</li><li><b>75–84%</b> Ισχυρή</li><li><b>60–74%</b> Καλή</li></ul>
+  <h2>Over 2.5 και Γκολ-Γκολ</h2>
+  <p>Με την ίδια λογική: για το <b>Over 2.5</b> μετράμε τα πρόσφατα παιχνίδια με 3+ γκολ και την πιθανότητα Poisson για 3+ γκολ. Για το <b>Γκολ-Γκολ</b> μετράμε σε πόσα παιχνίδια σκόραραν και οι δύο ομάδες και την πιθανότητα να σκοράρει η καθεμία ξεχωριστά (P γηπεδούχος σκοράρει × P φιλοξενούμενος σκοράρει).</p>
   <h2>Δίκαιη απόδοση</h2>
   <p>Είναι 100 / Βαθμός. Αν ο bookmaker δίνει μεγαλύτερη απόδοση από αυτή, το στοίχημα έχει θετική αξία με βάση το μοντέλο.</p>
   <h2>Περιορισμοί</h2>
@@ -448,7 +471,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <footer><div class="wrap">
   <div class="ft">
     <div class="rg"><span class="r18">21+</span><span>Παίξε υπεύθυνα. Το στοίχημα ενέχει κίνδυνο εθισμού και απώλειας περιουσίας. Γραμμή βοήθειας: 1114.</span></div>
-    <nav><a href="?p=results">Ιστορικό</a><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
+    <nav><a href="?p=over25">Over 2.5</a><a href="?p=gg">Γκολ-Γκολ</a><a href="?p=results">Ιστορικό</a><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
   </div>
   <p class="legal">© <?= date('Y') ?> <?= e(SITE_NAME) ?> · Τα προγνωστικά είναι στατιστικές εκτιμήσεις, όχι εγγυήσεις. Δεδομένα: football-data.org · Ορισμένοι σύνδεσμοι είναι διαφημιστικοί.</p>
 </div></footer>
@@ -459,7 +482,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <script>
 (function(){
   var list=document.getElementById('list'); if(!list) return initCk();
-  var st={d:'all',l:'all',m:70};
+  var st={d:'all',l:'all',m:+document.getElementById('mn').value};
   function apply(){
     var n=0;
     list.querySelectorAll('.card').forEach(function(c){

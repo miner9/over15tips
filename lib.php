@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/teams_gr.php';
 date_default_timezone_set(TIMEZONE);
 
 const CACHE_FILE = __DIR__ . '/data/cache.json';
@@ -70,7 +71,7 @@ function team_last3(array $matches, int $teamId, string $beforeUtc): array {
     foreach (array_slice($played, 0, 3) as $m) {
         $home = $m['h']['id'] === $teamId;
         $out[] = [
-            'opp' => $home ? $m['a']['n'] : $m['h']['n'],
+            'opp' => gr_team($home ? $m['a']['n'] : $m['h']['n']),
             'venue' => $home ? 'H' : 'A',
             'gf' => $home ? $m['hg'] : $m['ag'],
             'ga' => $home ? $m['ag'] : $m['hg'],
@@ -79,22 +80,36 @@ function team_last3(array $matches, int $teamId, string $beforeUtc): array {
     return $out;
 }
 
+/** Αγορές: όνομα, συνθήκη επιτυχίας για ένα παιχνίδι, ελάχιστο % για να εμφανιστεί. */
+const MARKETS = [
+    'o15' => ['label' => 'Over 1.5', 'short' => 'OVER 1.5', 'min' => MIN_SHOW],
+    'o25' => ['label' => 'Over 2.5', 'short' => 'OVER 2.5', 'min' => 55],
+    'gg'  => ['label' => 'Γκολ-Γκολ', 'short' => 'GG', 'min' => 55],
+];
+function market_hit(string $mk, int $gf, int $ga): bool {
+    return match ($mk) { 'o25' => $gf + $ga >= 3, 'gg' => $gf > 0 && $ga > 0, default => $gf + $ga >= 2 };
+}
+
 function team_stats(array $games): array {
     $n = count($games);
-    $hits = count(array_filter($games, fn($g) => $g['gf'] + $g['ga'] >= 2));
     $gf = array_sum(array_column($games, 'gf'));
     $ga = array_sum(array_column($games, 'ga'));
-    return ['games' => $games, 'hits' => $hits, 'avgFor' => $gf / $n, 'avgAg' => $ga / $n, 'avgTot' => ($gf + $ga) / $n];
+    $hits = [];
+    foreach (array_keys(MARKETS) as $mk) $hits[$mk] = count(array_filter($games, fn($g) => market_hit($mk, $g['gf'], $g['ga'])));
+    return ['games' => $games, 'hits' => $hits['o15'], 'mhits' => $hits, 'avgFor' => $gf / $n, 'avgAg' => $ga / $n, 'avgTot' => ($gf + $ga) / $n];
 }
 
 /**
- * Βαθμολογία:
- *  50% = πόσα από τα 6 παιχνίδια (3+3) βγήκαν Over 1.5
- *  50% = Poisson πιθανότητα για 2+ γκολ με αναμενόμενα γκολ από επίθεση/άμυνα των δύο ομάδων
+ * Βαθμολογία κάθε αγοράς:
+ *  50% = πόσα από τα 6 πρόσφατα παιχνίδια (3+3) «έπιασαν» την αγορά
+ *  50% = Poisson πιθανότητα από τα αναμενόμενα γκολ (επίθεση ομάδας + άμυνα αντιπάλου)
+ * $mk: 'o15' | 'o25' | 'gg' | 'all' (όλοι οι αγώνες, χωρίς φίλτρο — βασικά πεδία = Over 1.5)
  */
-function analyse(array $data): array {
+function analyse(array $data, string $mk = 'o15', ?int $min = null): array {
     $now = gmdate('Y-m-d\TH:i:s\Z');
     $until = gmdate('Y-m-d\TH:i:s\Z', time() + DAYS_AHEAD * 86400);
+    $use = $mk === 'all' ? 'o15' : $mk;
+    $min ??= $mk === 'all' ? 0 : MARKETS[$mk]['min'];
     $tips = [];
     foreach ($data['leagues'] as $code => $matches) {
         foreach ($matches as $m) {
@@ -104,16 +119,28 @@ function analyse(array $data): array {
             $a3 = team_last3($matches, $m['a']['id'], $m['utc']);
             if (count($h3) < 3 || count($a3) < 3) continue;
             $H = team_stats($h3); $A = team_stats($a3);
-            $lambda = ($H['avgFor'] + $A['avgAg']) / 2 + ($A['avgFor'] + $H['avgAg']) / 2;
-            $pPois = 1 - exp(-$lambda) * (1 + $lambda);
-            $hitRate = ($H['hits'] + $A['hits']) / 6;
-            $conf = (int)round(100 * (0.5 * $hitRate + 0.5 * $pPois));
-            if ($conf < MIN_SHOW) continue;
+            $lh = ($H['avgFor'] + $A['avgAg']) / 2;
+            $la = ($A['avgFor'] + $H['avgAg']) / 2;
+            $l = $lh + $la;
+            $p = [
+                'o15' => 1 - exp(-$l) * (1 + $l),
+                'o25' => 1 - exp(-$l) * (1 + $l + $l * $l / 2),
+                'gg'  => (1 - exp(-$lh)) * (1 - exp(-$la)),
+            ];
+            $mkt = [];
+            foreach ($p as $k => $pp) {
+                $hits = $H['mhits'][$k] + $A['mhits'][$k];
+                $c = max(1, (int)round(100 * (0.5 * $hits / 6 + 0.5 * $pp)));
+                $mkt[$k] = ['conf' => $c, 'hits' => $hits, 'fair' => 100 / $c, 'H' => $H['mhits'][$k], 'A' => $A['mhits'][$k]];
+            }
+            if ($mkt[$use]['conf'] < $min) continue;
+            $home = $m['h'] + ['g' => gr_team($m['h']['n'])];
+            $away = $m['a'] + ['g' => gr_team($m['a']['n'])];
             $tips[] = [
                 'id' => $m['id'], 'league' => $code, 'leagueName' => LEAGUES[$code] ?? $code,
-                'ts' => strtotime($m['utc']), 'home' => $m['h'], 'away' => $m['a'],
-                'H' => $H, 'A' => $A, 'xg' => $lambda, 'hits' => $H['hits'] + $A['hits'],
-                'conf' => $conf, 'fair' => 100 / $conf,
+                'ts' => strtotime($m['utc']), 'home' => $home, 'away' => $away,
+                'H' => $H, 'A' => $A, 'xg' => $l, 'mk' => $use, 'm' => $mkt,
+                'hits' => $mkt[$use]['hits'], 'conf' => $mkt[$use]['conf'], 'fair' => $mkt[$use]['fair'],
             ];
         }
     }
@@ -207,10 +234,10 @@ function crest(array $t): string {
         : '<span class="crest crest-i">' . e(initials($t['n'])) . '</span>';
 }
 
-function form_rows(array $S): string {
+function form_rows(array $S, string $mk = 'o15'): string {
     $o = '';
     foreach ($S['games'] as $g) {
-        $over = $g['gf'] + $g['ga'] >= 2;
+        $over = market_hit($mk, $g['gf'], $g['ga']);
         $o .= '<li class="' . ($over ? 'ov' : 'un') . '"><span class="sc">' . $g['gf'] . '-' . $g['ga'] . '</span><span class="op">' . ($g['venue'] === 'H' ? 'vs ' : '@ ') . e($g['opp']) . '</span><span class="tick">' . ($over ? '✓' : '✕') . '</span></li>';
     }
     return $o;

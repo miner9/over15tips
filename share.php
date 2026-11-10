@@ -44,7 +44,7 @@ h1 span{color:#2bd576}
 <?php if (!$tips): ?><div class="empty">Νέα προγνωστικά με την επόμενη αγωνιστική.</div><?php endif; ?>
 <?php foreach ($tips as $t): ?>
   <div class="row <?= $t['conf'] >= 85 ? 'top3' : '' ?>">
-    <div class="t"><div class="m"><?= e($t['home']['n']) ?> – <?= e($t['away']['n']) ?></div>
+    <div class="t"><div class="m"><?= e($t['home']['g']) ?> – <?= e($t['away']['g']) ?></div>
     <div class="s"><?= date('H:i', $t['ts']) ?> · <?= e($t['leagueName']) ?> · Over σε <?= $t['hits'] ?>/6</div></div>
     <div class="p"><?= $t['conf'] ?>%</div>
   </div>

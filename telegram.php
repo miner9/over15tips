@@ -75,7 +75,7 @@ function cmd_tips(bool $next = false): void {
     $msg .= "<i>Με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας</i>\n\n";
     foreach ($tips as $t) {
         $icon = $t['conf'] >= 85 ? '🔥' : '✅';
-        $msg .= "$icon <b>" . e($t['home']['n']) . ' – ' . e($t['away']['n']) . "</b>\n";
+        $msg .= "$icon <b>" . e($t['home']['g']) . ' – ' . e($t['away']['g']) . "</b>\n";
         $msg .= '🕒 ' . date('H:i', $t['ts']) . ' · ' . e($t['leagueName']) . "\n";
         $msg .= "📈 {$t['conf']}% · Over σε {$t['hits']}/6 · Δίκαιη απόδ. " . number_format($t['fair'], 2) . "\n\n";
     }
@@ -86,7 +86,7 @@ function cmd_tips(bool $next = false): void {
     if ($sent) {
         @mkdir(POSTED_DIR, 0755, true);
         file_put_contents(POSTED_DIR . "/$today.json", json_encode(array_map(fn($t) => [
-            'id' => $t['id'], 'league' => $t['league'], 'home' => $t['home']['n'], 'away' => $t['away']['n'], 'conf' => $t['conf'],
+            'id' => $t['id'], 'league' => $t['league'], 'home' => $t['home']['g'], 'away' => $t['away']['g'], 'conf' => $t['conf'],
         ], $tips)));
         echo "Στάλθηκαν " . count($tips) . " tips.\n";
     }
