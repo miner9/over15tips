@@ -23,7 +23,7 @@ const LEAGUES = [
     'ELC' => 'Championship',
 ];
 
-const DAYS_AHEAD   = 7;      // πόσες μέρες μπροστά
+const DAYS_AHEAD   = 14;     // πόσες μέρες μπροστά (καλύπτει διακοπές εθνικών)
 const CACHE_TTL    = 10800;  // ανανέωση δεδομένων κάθε 3 ώρες
 const MIN_SHOW     = 60;     // κάτω από αυτό το % δεν εμφανίζεται καν
 const TIMEZONE     = 'Europe/Athens';

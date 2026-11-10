@@ -194,7 +194,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <?php if ($page === 'home'): ?>
 <section class="hero"><div class="wrap">
   <span class="eyebrow"><span class="dot"></span>Ενημέρωση <?= e($updated) ?></span>
-  <h1>Over 1.5 γκολ — τα πιο σίγουρα παιχνίδια της εβδομάδας</h1>
+  <h1>Over 1.5 γκολ — τα πιο σίγουρα παιχνίδια της αγωνιστικής</h1>
   <p class="sub">Αναλύουμε αυτόματα τα τελευταία 3 παιχνίδια κάθε ομάδας σε <?= count(LEAGUES) ?> κορυφαία πρωταθλήματα και βαθμολογούμε κάθε αγώνα για 2+ γκολ.</p>
   <div class="stats">
     <div class="stat"><div class="v"><?= $totalUpcoming ?></div><div class="l">Αγώνες αναλύθηκαν</div></div>
