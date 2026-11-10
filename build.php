@@ -39,7 +39,7 @@ echo count($tips) . " σελίδες αγώνων\n";
 @mkdir("$out/share", 0755, true);
 foreach (['story', 'post'] as $f) file_put_contents("$out/share/$f.html", shell_exec('php ' . escapeshellarg(__DIR__ . '/share.php') . ' ' . $f));
 $pk = pick_day_tips($tips, 75, 7);
-$dayLbl = $pk['day'] ? mb_convert_case(gr_full_day(strtotime($pk['day'])), MB_CASE_TITLE, 'UTF-8') : '';
+$dayLbl = $pk['day'] ? ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][(int)date('w', strtotime($pk['day']))] . ' ' . date('d/m', strtotime($pk['day'])) : '';
 $cap = "⚽ Προγνωστικά Over 1.5 γκολ" . ($dayLbl ? " — $dayLbl" : '') . "\n\n";
 foreach ($pk['tips'] as $t) $cap .= "✅ {$t['home']['n']} – {$t['away']['n']} ({$t['conf']}%)\n";
 $cap .= "\n📲 Δωρεάν κάθε πρωί στο Telegram — link στο bio\n🔎 Ανάλυση: " . preg_replace('#^https?://#', '', SITE_URL) . "\n\n21+ | Παίξε υπεύθυνα\n#στοιχημα #προγνωστικα #over15 #ποδοσφαιρο #footballtips #bettingtips";
