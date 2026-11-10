@@ -9,7 +9,7 @@ const TEAMS_GR = [
     'Nottingham' => 'Νότιγχαμ Φόρεστ', 'Sunderland' => 'Σάντερλαντ', 'Tottenham' => 'Τότεναμ', 'West Ham' => 'Γουέστ Χαμ',
     'Wolverhampton' => 'Γουλβς', 'Burnley' => 'Μπέρνλι', 'Leicester City' => 'Λέστερ',
     // Championship
-    'Birmingham' => 'Μπέρμιγχαμ', 'Blackburn' => 'Μπλάκμπερν', 'Bolton' => 'Μπόλτον', 'Bristol City' => 'Μπρίστολ Σίτι',
+    'Birmingham' => 'Μπέρμιγχαμ', 'Blackburn' => 'Μπλάκμπερν', 'Bolton' => 'Μπόλτον', 'Bristol City' => 'Μπρίστολ Σίτι', 'Cardiff' => 'Κάρντιφ', 'Hull' => 'Χαλ', 'Leicester' => 'Λέστερ', 'Plymouth' => 'Πλίμουθ', 'Luton Town' => 'Λούτον', 'Barnsley' => 'Μπάρνσλεϊ',
     'Charlton' => 'Τσάρλτον', 'Derby County' => 'Ντέρμπι', 'Lincoln City' => 'Λίνκολν', 'Middlesbrough' => 'Μίντλεσμπρο',
     'Millwall' => 'Μίλγουολ', 'Norwich' => 'Νόριτς', 'Portsmouth' => 'Πόρτσμουθ', 'Preston NE' => 'Πρέστον', 'QPR' => 'ΚΠΡ',
     'Sheffield Utd' => 'Σέφιλντ Γιουνάιτεντ', 'Sheffield Wed' => 'Σέφιλντ Γουένσντεϊ', 'Southampton' => 'Σαουθάμπτον',
