@@ -26,12 +26,12 @@ $titles = [
     'results' => 'Ιστορικό Επιτυχίας Προγνωστικών Over 1.5 | ' . SITE_NAME,
 ];
 $desc = 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.';
-$canon = SITE_URL . ($page === 'home' ? '/' : '/' . $page . '.html');
+$canon = SITE_URL . ($page === 'home' ? '/' : '/' . $page);
 if ($M) {
     $mn = $M['home']['n'] . ' – ' . $M['away']['n'];
     $titles['match'] = $mn . ' Προγνωστικά Over 1.5 (' . date('d/m', $M['ts']) . ') | ' . SITE_NAME;
     $desc = $mn . ' ' . date('d/m/Y', $M['ts']) . ', ' . $M['leagueName'] . ': ' . $M['conf'] . '% πιθανότητα για Over 1.5 γκολ. Ανάλυση των τελευταίων 3 αγώνων, αναμενόμενα γκολ και δίκαιη απόδοση.';
-    $canon = SITE_URL . '/agonas/' . match_slug($M) . '.html';
+    $canon = SITE_URL . '/agonas/' . match_slug($M);
 }
 
 ?><!DOCTYPE html>
@@ -344,7 +344,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <div class="wrap page" style="max-width:860px">
   <div class="crumbs"><a href="./">Προγνωστικά</a> › <?= e($t['leagueName']) ?> › <?= e($hn) ?> – <?= e($an) ?></div>
   <h1><?= e($hn) ?> – <?= e($an) ?>: Προγνωστικά Over 1.5</h1>
-  <p style="color:var(--mut)"><?= e($t['leagueName']) ?> · <?= e(gr_day($t['ts'])) ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας)</p>
+  <p style="color:var(--mut)"><?= e($t['leagueName']) ?> · <?= ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][(int)date('w', $t['ts'])] ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας)</p>
   <div class="mhead">
     <div class="team home"><?= crest($t['home']) ?><div class="nm"><?= e($hn) ?></div><div class="hint">Γηπεδούχος</div></div>
     <div class="ring" style="--p:<?= $t['conf'] ?>;--rc:<?= $rc ?>"><div><span><b><?= $t['conf'] ?>%</b><small>OVER 1.5</small></span></div></div>

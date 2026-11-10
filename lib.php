@@ -226,11 +226,11 @@ function match_slug(array $t): string {
 }
 function is_static(): bool { return defined('STATIC_BUILD'); }
 function page_url(string $p): string {
-    if (is_static()) return $p === 'home' ? '/' : "/$p.html";
+    if (is_static()) return $p === 'home' ? '/' : "/$p";
     return $p === 'home' ? './' : "?p=$p";
 }
 function match_url(array $t): string {
-    return is_static() ? '/agonas/' . match_slug($t) . '.html' : '?p=match&id=' . $t['id'];
+    return is_static() ? '/agonas/' . match_slug($t) : '?p=match&id=' . $t['id'];
 }
 
 /* ---------- Ιστορικό επιτυχίας ---------- */

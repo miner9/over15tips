@@ -35,7 +35,7 @@ function footer(): string {
     if (AFF_URL) $f .= "🎯 <a href=\"" . e(AFF_URL) . "\">" . e(AFF_OFFER) . "</a>\n";
     $f .= "📊 Όλη η ανάλυση: " . e(SITE_URL) . "\n";
     $st = track_stats(load_tracked(), 30, 70);
-    if ($st['n'] >= 10) $f .= "📈 Επιτυχία 30 ημερών: " . pct($st['w'], $st['n']) . " (" . $st['n'] . " tips) · " . e(SITE_URL) . "/results.html\n";
+    if ($st['n'] >= 10) $f .= "📈 Επιτυχία 30 ημερών: " . pct($st['w'], $st['n']) . " (" . $st['n'] . " tips) · " . e(SITE_URL) . "/results\n";
     $f .= "<i>21+ | Παίξε υπεύθυνα | Γραμμή βοήθειας 1114</i>";
     return $f;
 }

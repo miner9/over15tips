@@ -18,7 +18,7 @@ function render(array $get): string {
     ob_start();
     include __DIR__ . '/index.php';
     $html = ob_get_clean();
-    foreach (['method', 'privacy', 'terms', 'results'] as $p) $html = str_replace('href="?p=' . $p . '"', 'href="/' . $p . '.html"', $html);
+    foreach (['method', 'privacy', 'terms', 'results'] as $p) $html = str_replace('href="?p=' . $p . '"', 'href="/' . $p . '"', $html);
     return str_replace('href="./"', 'href="/"', $html);
 }
 
@@ -26,12 +26,12 @@ $pages = ['home' => 'index.html', 'method' => 'method.html', 'privacy' => 'priva
 $urls = [];
 foreach ($pages as $p => $file) {
     file_put_contents("$out/$file", render(['p' => $p]));
-    $urls[] = SITE_URL . '/' . ($file === 'index.html' ? '' : $file);
+    $urls[] = SITE_URL . '/' . ($file === 'index.html' ? '' : basename($file, '.html'));
 }
 foreach ($tips as $t) {
     $f = 'agonas/' . match_slug($t) . '.html';
     file_put_contents("$out/$f", render(['p' => 'match', 'id' => $t['id']]));
-    $urls[] = SITE_URL . '/' . $f;
+    $urls[] = SITE_URL . '/' . substr($f, 0, -5);
 }
 echo count($tips) . " σελίδες αγώνων\n";
 
