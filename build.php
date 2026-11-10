@@ -54,6 +54,7 @@ file_put_contents("$out/share/index.html", '<!DOCTYPE html><html lang="el"><head
 
 copy(__DIR__ . '/ads.txt', "$out/ads.txt");
 @mkdir("$out/assets", 0755, true);
+copy(__DIR__ . '/_headers', "$out/_headers");
 foreach (glob(__DIR__ . '/assets/*') as $a) copy($a, "$out/assets/" . basename($a));
 file_put_contents("$out/robots.txt", "User-agent: *\nAllow: /\nSitemap: " . SITE_URL . "/sitemap.xml\n");
 $x = '';
