@@ -30,6 +30,21 @@ function tg_send(string $html): bool {
     return true;
 }
 
+/** Στέλνει εικόνα (αρχείο) με λεζάντα. Αν η λεζάντα ξεπερνά το όριο του Telegram, στέλνει εικόνα + ξεχωριστό κείμενο. */
+function tg_photo(string $file, string $html): bool {
+    $plainLen = mb_strlen(strip_tags($html));
+    if (!TG_BOT_TOKEN || !TG_CHAT_ID) { echo "---- DRY RUN photo: $file ($plainLen chars) ----\n"; return tg_send($html); }
+    $fits = $plainLen <= 1000;
+    $ch = curl_init('https://api.telegram.org/bot' . TG_BOT_TOKEN . '/sendPhoto');
+    $fields = ['chat_id' => TG_CHAT_ID, 'photo' => new CURLFile($file, 'image/png', 'over15.png')];
+    if ($fits) { $fields['caption'] = $html; $fields['parse_mode'] = 'HTML'; }
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30, CURLOPT_POST => true, CURLOPT_POSTFIELDS => $fields]);
+    $res = json_decode((string)curl_exec($ch), true);
+    curl_close($ch);
+    if (empty($res['ok'])) { fwrite(STDERR, 'Telegram photo error: ' . json_encode($res) . "\n"); return tg_send($html); }
+    return $fits ? true : tg_send($html);
+}
+
 function footer(): string {
     $f = "\n";
     if (AFF_URL) $f .= "🎯 <a href=\"" . e(AFF_URL) . "\">" . e(AFF_OFFER) . "</a>\n";
@@ -66,7 +81,9 @@ function cmd_tips(bool $next = false): void {
     }
     $msg .= footer();
 
-    if (tg_send($msg)) {
+    $img = __DIR__ . '/dist/share/post.png';
+    $sent = is_file($img) ? tg_photo($img, $msg) : tg_send($msg);
+    if ($sent) {
         @mkdir(POSTED_DIR, 0755, true);
         file_put_contents(POSTED_DIR . "/$today.json", json_encode(array_map(fn($t) => [
             'id' => $t['id'], 'league' => $t['league'], 'home' => $t['home']['n'], 'away' => $t['away']['n'], 'conf' => $t['conf'],

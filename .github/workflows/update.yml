@@ -35,14 +35,6 @@ jobs:
         if: github.event.schedule == '0 7 * * *' || inputs.telegram == 'results'
         run: php telegram.php results
 
-      - name: Telegram — tips
-        if: github.event.schedule == '30 8 * * *' || inputs.telegram == 'tips'
-        run: php telegram.php tips
-
-      - name: Telegram — επόμενη αγωνιστική
-        if: inputs.telegram == 'next'
-        run: php telegram.php next
-
       - name: Build site
         run: php build.php
 
@@ -56,6 +48,14 @@ jobs:
           done
           rm -f dist/share/story.html dist/share/post.html
           ls -la dist/share
+
+      - name: Telegram — tips
+        if: github.event.schedule == '30 8 * * *' || inputs.telegram == 'tips'
+        run: php telegram.php tips
+
+      - name: Telegram — επόμενη αγωνιστική
+        if: inputs.telegram == 'next'
+        run: php telegram.php next
 
       - name: Save history (Telegram + track record)
         run: |
