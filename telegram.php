@@ -52,7 +52,9 @@ function cmd_tips(bool $next = false): void {
     usort($tips, fn($a, $b) => $a['ts'] <=> $b['ts']);
 
     $ts0 = strtotime($today);
-    $msg = "⚽ <b>OVER 1.5 — " . e(gr_day($ts0)) . ' ' . date('d/m', $ts0) . "</b>\n";
+    $lbl = gr_day($ts0);
+    if (in_array($lbl, ['Σήμερα', 'Αύριο'], true)) $lbl .= ' ' . date('d/m', $ts0);
+    $msg = "⚽ <b>OVER 1.5 — " . e($lbl) . "</b>\n";
     $msg .= "<i>Με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας</i>\n\n";
     foreach ($tips as $t) {
         $icon = $t['conf'] >= 85 ? '🔥' : '✅';
