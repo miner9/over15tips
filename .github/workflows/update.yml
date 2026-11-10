@@ -10,6 +10,9 @@ on:
       telegram:
         description: 'Telegram: none / tips / next / results'
         default: 'none'
+      meta:
+        description: 'Instagram/Facebook: none / post / check'
+        default: 'none'
 
 permissions:
   contents: write
@@ -24,6 +27,8 @@ env:
   TG_CHAT_ID: ${{ vars.TG_CHAT_ID }}
   TELEGRAM_URL: ${{ vars.TELEGRAM_URL }}
   SITE_URL: ${{ vars.SITE_URL }}
+  META_TOKEN: ${{ secrets.META_TOKEN }}
+  META_PAGE_ID: ${{ vars.META_PAGE_ID }}
 
 jobs:
   run:
@@ -72,3 +77,8 @@ jobs:
           publish_dir: ./dist
           force_orphan: true
           commit_message: "site update"
+
+      - name: Instagram + Facebook (μετά το deploy)
+        if: github.event.schedule == '30 8 * * *' || inputs.meta == 'post' || inputs.meta == 'check'
+        continue-on-error: true
+        run: php meta.php ${{ inputs.meta == 'check' && 'check' || '' }}

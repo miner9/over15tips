@@ -56,3 +56,8 @@ define('TG_BOT_TOKEN', getenv('TG_BOT_TOKEN') ?: '');   // GitHub secret
 define('TG_CHAT_ID', getenv('TG_CHAT_ID') ?: '');       // π.χ. '@over15tips'
 const TG_MIN_CONF  = 75;            // μόνο ισχυρές επιλογές στο κανάλι
 const TG_MAX_TIPS  = 6;
+
+// ================== META (Instagram + Facebook Page) ==================
+define('META_TOKEN', getenv('META_TOKEN') ?: '');          // GitHub secret: long-lived user token
+define('META_PAGE_ID', getenv('META_PAGE_ID') ?: '61596384873026');
+const META_API = 'https://graph.facebook.com/v21.0';

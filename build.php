@@ -43,6 +43,7 @@ $dayLbl = $pk['day'] ? ['Κυριακή','Δευτέρα','Τρίτη','Τετά
 $cap = "⚽ Προγνωστικά Over 1.5 γκολ" . ($dayLbl ? " — $dayLbl" : '') . "\n\n";
 foreach ($pk['tips'] as $t) $cap .= "✅ {$t['home']['n']} – {$t['away']['n']} ({$t['conf']}%)\n";
 $cap .= "\n📲 Δωρεάν κάθε πρωί στο Telegram — link στο bio\n🔎 Ανάλυση: " . preg_replace('#^https?://#', '', SITE_URL) . "\n\n21+ | Παίξε υπεύθυνα\n#στοιχημα #προγνωστικα #over15 #ποδοσφαιρο #footballtips #bettingtips";
+file_put_contents("$out/share/caption.txt", $cap);
 $v = date('YmdHi');
 file_put_contents("$out/share/index.html", '<!DOCTYPE html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Social — ' . e(SITE_NAME) . '</title>
 <style>body{font-family:system-ui,sans-serif;background:#0a0e13;color:#e9eef4;margin:0;padding:18px;max-width:560px;margin:auto}h1{font-size:20px}h2{font-size:15px;color:#8796a8;margin:22px 0 8px}img{width:100%;border-radius:12px;border:1px solid #283545}a.b,button{display:block;width:100%;text-align:center;background:#2bd576;color:#04140b;font-weight:800;padding:12px;border-radius:10px;margin-top:8px;text-decoration:none;border:0;font-size:15px}pre{white-space:pre-wrap;background:#121922;border:1px solid #283545;border-radius:10px;padding:12px;font-size:14px}p{color:#8796a8;font-size:13px}</style></head><body>
