@@ -9,7 +9,7 @@ function is_demo(): bool { return API_KEY === ''; }
 
 /* ---------- Λήψη δεδομένων ---------- */
 
-function api_get(string $path): ?array {
+function api_get(string $path, int $try = 0): ?array {
     $ch = curl_init('https://api.football-data.org/v4' . $path);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -19,6 +19,7 @@ function api_get(string $path): ?array {
     $body = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    if ($code === 429 && $try < 2) { sleep(62); return api_get($path, $try + 1); } // όριο 10/λεπτό
     if ($code !== 200 || !$body) { error_log("football-data $path -> HTTP $code"); return null; }
     return json_decode($body, true);
 }
@@ -30,7 +31,9 @@ function refresh_cache(): bool {
     if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) return false; // κάποιος άλλος ανανεώνει ήδη
     $leagues = [];
     foreach (LEAGUES as $code => $name) {
+        if ($leagues || $code !== array_key_first(LEAGUES)) sleep(PHP_SAPI === 'cli' ? 7 : 0);
         $data = api_get("/competitions/$code/matches");
+        if (PHP_SAPI === 'cli') echo "$code: " . ($data ? count($data['matches']) . " αγώνες" : 'ΣΦΑΛΜΑ') . "\n";
         if (!$data || empty($data['matches'])) continue;
         $leagues[$code] = array_map(fn($m) => [
             'id' => $m['id'], 'utc' => $m['utcDate'], 'status' => $m['status'],
