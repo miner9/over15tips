@@ -9,7 +9,8 @@ $tips = $page === 'home' ? analyse($data) : [];
 $top3 = array_slice($tips, 0, 3);
 $updated = $data['fetched'] ? date('d/m H:i', $data['fetched']) : '—';
 $totalUpcoming = 0;
-foreach ($data['leagues'] as $ms) foreach ($ms as $m) if (in_array($m['status'], ['SCHEDULED', 'TIMED'])) $totalUpcoming++;
+$__now = gmdate('Y-m-d\TH:i:s\Z'); $__until = gmdate('Y-m-d\TH:i:s\Z', time() + DAYS_AHEAD * 86400);
+foreach ($data['leagues'] as $ms) foreach ($ms as $m) if (in_array($m['status'], ['SCHEDULED', 'TIMED']) && $m['utc'] >= $__now && $m['utc'] <= $__until) $totalUpcoming++;
 
 $titles = [
     'home'    => 'Over 1.5 Προγνωστικά Σήμερα — Στατιστικά Τελευταίων 3 Αγώνων | ' . SITE_NAME,
