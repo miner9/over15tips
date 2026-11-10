@@ -2,7 +2,7 @@
 // Φτιάχνει στατικό site στο dist/ (για Cloudflare Pages). Χρήση: php build.php
 if (PHP_SAPI !== 'cli') exit;
 require_once __DIR__ . '/lib.php';
-if (!is_demo()) refresh_cache();
+if (!is_demo() && (!is_file(CACHE_FILE) || time() - filemtime(CACHE_FILE) > 600)) refresh_cache();
 $out = __DIR__ . '/dist';
 @mkdir($out, 0755, true);
 $pages = ['home' => 'index.html', 'method' => 'method.html', 'privacy' => 'privacy.html', 'terms' => 'terms.html'];
