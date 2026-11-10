@@ -10,7 +10,7 @@ $ML = MARKETS[$mk]['label'];
 $data = load_data();
 $tips = isset($LIST_PAGES[$page]) ? analyse($data, $mk) : ($page === 'match' ? analyse($data, 'all') : []);
 $top3 = array_slice($tips, 0, 3);
-$stats = track_stats(load_tracked(), 30, 70);
+$stats = track_stats(load_tracked(), 30, $mk === 'o15' ? 70 : 55, $mk);
 $M = null;
 if ($page === 'match') {
     foreach ($tips as $t) if ((string)$t['id'] === (string)($_GET['id'] ?? '')) $M = $t;
@@ -26,7 +26,7 @@ $titles = [
     'method'  => 'Πώς βγαίνουν τα προγνωστικά Over 1.5 | ' . SITE_NAME,
     'privacy' => 'Πολιτική Απορρήτου & Cookies | ' . SITE_NAME,
     'terms'   => 'Όροι Χρήσης & Υπεύθυνο Παιχνίδι | ' . SITE_NAME,
-    'results' => 'Ιστορικό Επιτυχίας Προγνωστικών Over 1.5 | ' . SITE_NAME,
+    'results' => 'Ιστορικό Επιτυχίας Προγνωστικών Over 1.5, Over 2.5, Γκολ-Γκολ | ' . SITE_NAME,
     'over25'  => 'Over 2.5 Προγνωστικά Σήμερα — Αγώνες με 3+ Γκολ | ' . SITE_NAME,
     'gg'      => 'Γκολ-Γκολ (GG) Προγνωστικά Σήμερα — Σκοράρουν και οι δύο | ' . SITE_NAME,
 ];
@@ -267,7 +267,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
     <div class="stat"><div class="v"><?= count($tips) ?></div><div class="l">Προτάσεις <?= e($ML) ?></div></div>
     <div class="stat"><div class="v"><?= count(array_filter($tips, fn($t) => $t['conf'] >= 85)) ?></div><div class="l">Κορυφαίες (85%+)</div></div>
   </div>
-  <?php if ($stats['n'] >= 5): ?><div class="trk">📊 Επιτυχία τελευταίων 30 ημερών (70%+): <b><?= pct($stats['w'], $stats['n']) ?></b> σε <?= $stats['n'] ?> προτάσεις · <a href="?p=results">Δες όλο το ιστορικό →</a></div>
+  <?php if ($stats['n'] >= 5): ?><div class="trk">📊 Επιτυχία <?= e($ML) ?> τελευταίων 30 ημερών (<?= $mk === 'o15' ? 70 : 55 ?>%+): <b><?= pct($stats['w'], $stats['n']) ?></b> σε <?= $stats['n'] ?> προτάσεις · <a href="?p=results">Δες όλο το ιστορικό →</a></div>
   <?php else: ?><div class="trk">📊 Κάθε πρόταση καταγράφεται δημόσια με το αποτέλεσμά της · <a href="?p=results">Ιστορικό →</a></div><?php endif; ?>
   <?php if (is_demo()): ?><div class="demo">DEMO δεδομένα — βάλε το API key στο config.php για πραγματικούς αγώνες.</div><?php endif; ?>
 </div></section>
@@ -405,22 +405,22 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org', '@type' => 'SportsEvent', 'name' => "$hn vs $an", 'startDate' => date('c', $t['ts']), 'sport' => 'Soccer', 'homeTeam' => ['@type' => 'SportsTeam', 'name' => $hn], 'awayTeam' => ['@type' => 'SportsTeam', 'name' => $an], 'location' => ['@type' => 'Place', 'name' => $hn . ' stadium'], 'eventStatus' => 'https://schema.org/EventScheduled'], JSON_UNESCAPED_UNICODE) ?></script>
 </div>
 
-<?php elseif ($page === 'results'): $tr = load_tracked(); $all = track_stats($tr, 3650); $m30 = track_stats($tr, 30);
+<?php elseif ($page === 'results'): $tr = load_tracked();
   $settled = array_filter($tr, fn($r) => isset($r['res'])); uasort($settled, fn($a, $b) => $b['ts'] <=> $a['ts']); ?>
 <div class="wrap page" style="max-width:900px">
   <h1>Ιστορικό επιτυχίας</h1>
   <p>Κάθε πρόταση που εμφανίζεται στο site καταγράφεται αυτόματα πριν τη σέντρα και ελέγχεται μετά το τέλος του αγώνα. Δεν σβήνουμε τίποτα.</p>
-  <div class="stats" style="margin:20px 0">
-    <div class="stat"><div class="v"><?= pct($m30['w'], $m30['n']) ?></div><div class="l">Επιτυχία 30 ημερών (<?= $m30['n'] ?>)</div></div>
-    <div class="stat"><div class="v"><?= pct($all['w'], $all['n']) ?></div><div class="l">Συνολικά (<?= $all['n'] ?>)</div></div>
-  </div>
-  <h2>Ανά κατηγορία βεβαιότητας (30 ημέρες)</h2>
-  <div class="tiers"><?php foreach ($m30['tiers'] as $lbl => $x): ?><div class="stat"><div class="v"><?= pct($x['w'], $x['n']) ?></div><div class="l"><?= e($lbl) ?>% · <?= $x['w'] ?>/<?= $x['n'] ?></div></div><?php endforeach; ?></div>
+  <div style="overflow-x:auto"><table class="rtab" style="margin:18px 0"><tr><th>Αγορά</th><th>30 ημέρες</th><th>85%+</th><th>75–84%</th><th>60–74%</th><th>Συνολικά</th></tr>
+  <?php foreach (MARKETS as $k => $info): $m30 = track_stats($tr, 30, 0, $k); $all = track_stats($tr, 3650, 0, $k); ?>
+    <tr><td><b><?= e($info['label']) ?></b></td><td class="sc"><?= pct($m30['w'], $m30['n']) ?> <small style="color:var(--mut)">(<?= $m30['w'] ?>/<?= $m30['n'] ?>)</small></td>
+    <?php foreach ($m30['tiers'] as $x): ?><td class="sc"><?= pct($x['w'], $x['n']) ?> <small style="color:var(--mut)">(<?= $x['n'] ?>)</small></td><?php endforeach; ?>
+    <td class="sc"><?= pct($all['w'], $all['n']) ?> <small style="color:var(--mut)">(<?= $all['n'] ?>)</small></td></tr>
+  <?php endforeach; ?></table></div>
   <h2>Τελευταίες προτάσεις</h2>
   <?php if (!$settled): ?><p>Οι πρώτες προτάσεις θα κριθούν με την επόμενη αγωνιστική.</p><?php else: ?>
-  <div style="overflow-x:auto"><table class="rtab"><tr><th>Ημ/νία</th><th>Αγώνας</th><th>%</th><th>Σκορ</th><th></th></tr>
-  <?php foreach (array_slice($settled, 0, 150, true) as $r): ?>
-    <tr><td><?= date('d/m', $r['ts']) ?></td><td><?= e($r['h']) ?> – <?= e($r['a']) ?></td><td><?= $r['conf'] ?>%</td><td class="sc"><?= $r['res'][0] ?>-<?= $r['res'][1] ?></td><td class="<?= $r['hit'] ? 'ok' : 'no' ?>"><?= $r['hit'] ? '✓' : '✕' ?></td></tr>
+  <div style="overflow-x:auto"><table class="rtab"><tr><th>Ημ/νία</th><th>Αγώνας</th><th>Αγορά</th><th>%</th><th>Σκορ</th><th></th></tr>
+  <?php foreach (array_slice($settled, 0, 200, true) as $r): ?>
+    <tr><td><?= date('d/m', $r['ts']) ?></td><td><?= e(gr_team($r['h'])) ?> – <?= e(gr_team($r['a'])) ?></td><td><?= e(MARKETS[$r['mk'] ?? 'o15']['label']) ?></td><td><?= $r['conf'] ?>%</td><td class="sc"><?= $r['res'][0] ?>-<?= $r['res'][1] ?></td><td class="<?= $r['hit'] ? 'ok' : 'no' ?>"><?= $r['hit'] ? '✓' : '✕' ?></td></tr>
   <?php endforeach; ?></table></div><?php endif; ?>
 </div>
 

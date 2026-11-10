@@ -266,21 +266,24 @@ function match_url(array $t): string {
 const TRACK_FILE = __DIR__ . '/data/tracked.json';
 
 /** Καταγράφει κάθε πρόταση πριν τη σέντρα και βάζει αποτέλεσμα όταν τελειώσει ο αγώνας. */
-function track_tips(array $tips, array $data): array {
+/**
+ * $byMarket: ['o15' => tips, 'o25' => tips, 'gg' => tips]. Κλειδιά: "id" για Over 1.5 (παλιά εγγραφές), "o25:id", "gg:id".
+ */
+function track_tips(array $byMarket, array $data): array {
     $tr = is_file(TRACK_FILE) ? (json_decode(file_get_contents(TRACK_FILE), true) ?: []) : [];
-    foreach ($tips as $t) {
-        $k = (string)$t['id'];
+    foreach ($byMarket as $mk => $tips) foreach ($tips as $t) {
+        $k = ($mk === 'o15' ? '' : "$mk:") . $t['id'];
         if (isset($tr[$k]['res'])) continue;
-        $tr[$k] = ['ts' => $t['ts'], 'lg' => $t['league'], 'h' => $t['home']['n'], 'a' => $t['away']['n'], 'conf' => $t['conf']];
+        $tr[$k] = ['mk' => $mk, 'id' => $t['id'], 'ts' => $t['ts'], 'lg' => $t['league'], 'h' => $t['home']['g'] ?? $t['home']['n'], 'a' => $t['away']['g'] ?? $t['away']['n'], 'conf' => $t['conf']];
     }
     $byId = [];
     foreach ($data['leagues'] as $ms) foreach ($ms as $m) $byId[(string)$m['id']] = $m;
     foreach ($tr as $k => &$r) {
         if (isset($r['res'])) continue;
-        $m = $byId[$k] ?? null;
+        $m = $byId[(string)($r['id'] ?? $k)] ?? null;
         if ($m && $m['status'] === 'FINISHED' && $m['hg'] !== null) {
             $r['res'] = [$m['hg'], $m['ag']];
-            $r['hit'] = $m['hg'] + $m['ag'] >= 2;
+            $r['hit'] = market_hit($r['mk'] ?? 'o15', $m['hg'], $m['ag']);
         }
     }
     unset($r);
@@ -293,13 +296,13 @@ function load_tracked(): array {
 }
 
 /** Στατιστικά τελευταίων $days ημερών, συνολικά και ανά κατηγορία βεβαιότητας. */
-function track_stats(array $tr, int $days = 30, int $minConf = 0): array {
+function track_stats(array $tr, int $days = 30, int $minConf = 0, string $mk = 'o15'): array {
     $from = time() - $days * 86400;
     $tiers = ['85+' => [85, 101], '75–84' => [75, 85], '60–74' => [60, 75]];
     $out = ['n' => 0, 'w' => 0, 'tiers' => []];
     foreach ($tiers as $lbl => $_) $out['tiers'][$lbl] = ['n' => 0, 'w' => 0];
     foreach ($tr as $r) {
-        if (!isset($r['res']) || $r['ts'] < $from || $r['conf'] < $minConf) continue;
+        if (!isset($r['res']) || $r['ts'] < $from || $r['conf'] < $minConf || ($r['mk'] ?? 'o15') !== $mk) continue;
         $out['n']++; $out['w'] += $r['hit'] ? 1 : 0;
         foreach ($tiers as $lbl => [$lo, $hi]) if ($r['conf'] >= $lo && $r['conf'] < $hi) {
             $out['tiers'][$lbl]['n']++; $out['tiers'][$lbl]['w'] += $r['hit'] ? 1 : 0;

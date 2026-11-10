@@ -11,7 +11,7 @@ $out = __DIR__ . '/dist';
 // καταγραφή προτάσεων + αποτελεσμάτων (ιστορικό επιτυχίας)
 $data = load_data();
 $tips = analyse($data);
-track_tips($tips, $data);
+track_tips(['o15' => $tips, 'o25' => analyse($data, 'o25'), 'gg' => analyse($data, 'gg')], $data);
 
 function render(array $get): string {
     $_GET = $get;
