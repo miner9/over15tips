@@ -281,3 +281,18 @@ function track_stats(array $tr, int $days = 30, int $minConf = 0): array {
     return $out;
 }
 function pct(int $w, int $n): string { return $n ? round(100 * $w / $n) . '%' : '—'; }
+
+/** Η πιο κοντινή μέρα (από σήμερα) που έχει προτάσεις >= $min, με τις $max καλύτερες. */
+function pick_day_tips(array $tips, int $min = 75, int $max = 6): array {
+    $all = array_values(array_filter($tips, fn($t) => $t['conf'] >= $min));
+    if (!$all) return ['day' => null, 'tips' => []];
+    $day = min(array_map(fn($t) => date('Y-m-d', $t['ts']), $all));
+    $d = array_values(array_filter($all, fn($t) => date('Y-m-d', $t['ts']) === $day));
+    usort($d, fn($a, $b) => $b['conf'] <=> $a['conf']);
+    $d = array_slice($d, 0, $max);
+    usort($d, fn($a, $b) => $a['ts'] <=> $b['ts']);
+    return ['day' => $day, 'tips' => $d];
+}
+function gr_full_day(int $ts): string {
+    return ['ΚΥΡΙΑΚΗ', 'ΔΕΥΤΕΡΑ', 'ΤΡΙΤΗ', 'ΤΕΤΑΡΤΗ', 'ΠΕΜΠΤΗ', 'ΠΑΡΑΣΚΕΥΗ', 'ΣΑΒΒΑΤΟ'][(int)date('w', $ts)] . ' ' . date('d/m', $ts);
+}
