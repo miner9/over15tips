@@ -46,12 +46,12 @@ jobs:
       - name: Build site
         run: php build.php
 
-      - name: Save Telegram history
+      - name: Save history (Telegram + track record)
         run: |
           git config user.name "over15-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add data/posted
-          git diff --cached --quiet || (git commit -m "telegram history" && git push)
+          git add data/posted data/tracked.json 2>/dev/null || git add data/posted
+          git diff --cached --quiet || (git commit -m "history update" && git pull --rebase -q && git push)
 
       - name: Publish to branch "site" (Cloudflare Pages)
         uses: peaceiris/actions-gh-pages@v4

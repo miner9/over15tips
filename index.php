@@ -2,11 +2,17 @@
 require_once __DIR__ . '/lib.php';
 
 $page = $_GET['p'] ?? 'home';
-if (!in_array($page, ['home', 'method', 'privacy', 'terms'], true)) $page = 'home';
+if (!in_array($page, ['home', 'method', 'privacy', 'terms', 'match', 'results'], true)) $page = 'home';
 
 $data = load_data();
-$tips = $page === 'home' ? analyse($data) : [];
+$tips = in_array($page, ['home', 'match']) ? analyse($data) : [];
 $top3 = array_slice($tips, 0, 3);
+$stats = track_stats(load_tracked(), 30, 70);
+$M = null;
+if ($page === 'match') {
+    foreach ($tips as $t) if ((string)$t['id'] === (string)($_GET['id'] ?? '')) $M = $t;
+    if (!$M) $page = 'home';
+}
 $updated = $data['fetched'] ? date('d/m H:i', $data['fetched']) : '—';
 $totalUpcoming = 0;
 $__now = gmdate('Y-m-d\TH:i:s\Z'); $__until = gmdate('Y-m-d\TH:i:s\Z', time() + DAYS_AHEAD * 86400);
@@ -17,7 +23,16 @@ $titles = [
     'method'  => 'Πώς βγαίνουν τα προγνωστικά Over 1.5 | ' . SITE_NAME,
     'privacy' => 'Πολιτική Απορρήτου & Cookies | ' . SITE_NAME,
     'terms'   => 'Όροι Χρήσης & Υπεύθυνο Παιχνίδι | ' . SITE_NAME,
+    'results' => 'Ιστορικό Επιτυχίας Προγνωστικών Over 1.5 | ' . SITE_NAME,
 ];
+$desc = 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.';
+$canon = SITE_URL . ($page === 'home' ? '/' : '/' . $page . '.html');
+if ($M) {
+    $mn = $M['home']['n'] . ' – ' . $M['away']['n'];
+    $titles['match'] = $mn . ' Προγνωστικά Over 1.5 (' . date('d/m', $M['ts']) . ') | ' . SITE_NAME;
+    $desc = $mn . ' ' . date('d/m/Y', $M['ts']) . ', ' . $M['leagueName'] . ': ' . $M['conf'] . '% πιθανότητα για Over 1.5 γκολ. Ανάλυση των τελευταίων 3 αγώνων, αναμενόμενα γκολ και δίκαιη απόδοση.';
+    $canon = SITE_URL . '/agonas/' . match_slug($M) . '.html';
+}
 
 ?><!DOCTYPE html>
 <html lang="el">
@@ -25,8 +40,9 @@ $titles = [
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($titles[$page]) ?></title>
-<meta name="description" content="Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.">
-<link rel="canonical" href="<?= e(SITE_URL . ($page === 'home' ? '/' : '/?p=' . $page)) ?>">
+<meta name="description" content="<?= e($desc) ?>">
+<link rel="canonical" href="<?= e($canon) ?>">
+<meta property="og:description" content="<?= e($desc) ?>">
 <meta property="og:title" content="<?= e($titles[$page]) ?>">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0a0e13">
@@ -75,7 +91,7 @@ h1{font-size:clamp(28px,4.2vw,44px);line-height:1.1;letter-spacing:-.03em;font-w
 /* layout */
 .main{display:grid;grid-template-columns:1fr 320px;gap:28px;padding:28px 0 60px}
 @media(max-width:980px){.main{grid-template-columns:1fr}}
-@media(max-width:600px){.hd{gap:12px}.logo{white-space:nowrap;font-size:16px}nav a{padding:6px 8px;font-size:13px}nav a+a{display:none}.btn-tg{padding:8px 10px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{min-width:0;padding:10px 12px}.stat .v{font-size:18px}.stat .l{font-size:11px}.hero{padding:30px 0 22px}.wrap{padding:0 14px}}
+@media(max-width:600px){.hd{gap:12px}.logo{white-space:nowrap;font-size:16px}nav a{padding:6px 8px;font-size:13px}nav a+a+a{display:none}header .btn-tg{display:none}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{min-width:0;padding:10px 12px}.stat .v{font-size:18px}.stat .l{font-size:11px}.hero{padding:30px 0 22px}.wrap{padding:0 14px}}
 
 /* filters */
 .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
@@ -168,6 +184,33 @@ select{background:var(--card);color:var(--tx);border:1px solid var(--line2);bord
 .page ul{padding-left:20px}
 .formula{font-family:var(--mono);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--acc);margin:12px 0;overflow-x:auto}
 
+/* track record */
+.trk{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--mut)}
+.trk b{color:var(--acc);font-family:var(--mono);font-size:15px}
+.trk a{color:var(--acc);font-weight:700}
+.rtab{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+.rtab th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut2);padding:8px 10px;border-bottom:1px solid var(--line2)}
+.rtab td{padding:9px 10px;border-bottom:1px solid var(--line)}
+.rtab .sc{font-family:var(--mono);font-weight:700}
+.rtab .ok{color:var(--acc);font-weight:800}.rtab .no{color:var(--red);font-weight:800}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
+/* match page */
+.crumbs{font-size:13px;color:var(--mut);margin-bottom:14px}.crumbs a{color:var(--acc)}
+.mhead{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px;margin:18px 0}
+.mhead .team{flex-direction:column;text-align:center;gap:8px}.mhead .team.away{flex-direction:column;text-align:center}
+.mhead .crest{width:56px;height:56px}.mhead .crest-i{font-size:16px}
+.mhead .nm{font-size:18px;white-space:normal}
+.mhead .ring{width:110px;height:110px}.mhead .ring>div{width:92px;height:92px}.mhead .ring b{font-size:26px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.cta-tg{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(135deg,rgba(34,158,217,.18),var(--card));border:1px solid rgba(34,158,217,.35);border-radius:var(--r);padding:18px;margin:22px 0}
+.cta-tg b{font-size:16px}.cta-tg p{color:var(--mut);font-size:13px;margin:0}
+.more{color:var(--acc);font-weight:700;font-size:13px}
+@media(max-width:600px){.mhead{grid-template-areas:none;padding:16px 10px;gap:6px}.mhead .team.home,.mhead .team.away,.mhead .ring{grid-area:auto}.mhead .ring{width:84px;height:84px}.mhead .ring>div{width:70px;height:70px}.mhead .ring b{font-size:19px}.mhead .nm{font-size:14px}.mhead .crest{width:40px;height:40px}}
+.page .form ul{padding-left:0}.page .form li{margin-bottom:0;color:inherit}
+/* sticky telegram (mobile) */
+#tgbar{display:none}
+@media(max-width:600px){#tgbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:#0f2633;border-top:1px solid rgba(34,158,217,.4);font-size:13px;font-weight:700}#tgbar a{background:#229ED9;color:#fff;padding:8px 14px;border-radius:8px}body{padding-bottom:58px}}
+
 /* footer */
 footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;font-size:13px;color:var(--mut)}
 .ft{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-start}
@@ -177,6 +220,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 .legal{margin-top:20px;font-size:11px;color:var(--mut2)}
 
 /* cookies */
+@media(max-width:600px){#ck{bottom:68px!important}}
 #ck{position:fixed;left:16px;right:16px;bottom:16px;max-width:560px;margin:auto;background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:16px;display:none;gap:12px;align-items:center;z-index:50;font-size:13px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 #ck button{flex:none;padding:8px 16px;border-radius:8px;border:0;background:var(--acc);color:#04140b;font:800 13px Manrope,sans-serif;cursor:pointer}
 #ck a{text-decoration:underline}
@@ -187,6 +231,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <a href="./" class="logo"><span class="logo-mark">1.5</span><span><?= preg_replace('/(\d[\d.]*)/', '<b>$1</b>', e(SITE_NAME)) ?></span></a>
   <nav>
     <a href="./" class="<?= $page === 'home' ? 'on' : '' ?>">Προγνωστικά</a>
+    <a href="?p=results" class="<?= $page === 'results' ? 'on' : '' ?>">Ιστορικό</a>
     <a href="?p=method" class="<?= $page === 'method' ? 'on' : '' ?>">Μεθοδολογία</a>
   </nav>
   <?php if (TELEGRAM_URL): ?><a class="btn-tg" href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.3 9.6 19c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.8.4 1.3.2 1.5-.7L20.9 5c.3-1.2-.4-1.7-1.2-1.4L3.4 9.9c-1.1.4-1.1 1.1-.2 1.4l4.2 1.3 9.7-6.1c.5-.3.9-.1.5.2"/></svg>Telegram</a><?php endif; ?>
@@ -202,6 +247,8 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
     <div class="stat"><div class="v"><?= count($tips) ?></div><div class="l">Προτάσεις Over 1.5</div></div>
     <div class="stat"><div class="v"><?= count(array_filter($tips, fn($t) => $t['conf'] >= 85)) ?></div><div class="l">Κορυφαίες (85%+)</div></div>
   </div>
+  <?php if ($stats['n'] >= 5): ?><div class="trk">📊 Επιτυχία τελευταίων 30 ημερών (70%+): <b><?= pct($stats['w'], $stats['n']) ?></b> σε <?= $stats['n'] ?> προτάσεις · <a href="?p=results">Δες όλο το ιστορικό →</a></div>
+  <?php else: ?><div class="trk">📊 Κάθε πρόταση καταγράφεται δημόσια με το αποτέλεσμά της · <a href="?p=results">Ιστορικό →</a></div><?php endif; ?>
   <?php if (is_demo()): ?><div class="demo">DEMO δεδομένα — βάλε το API key στο config.php για πραγματικούς αγώνες.</div><?php endif; ?>
 </div></section>
 
@@ -243,6 +290,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
           <span>Over σε <b><?= $t['hits'] ?>/6</b></span>
           <span>Αναμ. γκολ <b><?= number_format($t['xg'], 2) ?></b></span>
           <span>Δίκαιη απόδοση <b><?= number_format($t['fair'], 2) ?></b></span>
+          <a class="more" href="<?= e(match_url($t)) ?>">Πλήρης ανάλυση →</a>
           <?= aff_btn(AFF_OFFER) ?>
         </div>
       </article>
@@ -290,6 +338,66 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   </aside>
 </div>
 
+<?php elseif ($page === 'match'): $t = $M; [$tc, $tl] = tier($t['conf']);
+  $rc = $tc === 'top' ? 'var(--gold)' : ($tc === 'strong' ? 'var(--acc)' : 'var(--blue)');
+  $H = $t['H']; $A = $t['A']; $hn = $t['home']['n']; $an = $t['away']['n']; ?>
+<div class="wrap page" style="max-width:860px">
+  <div class="crumbs"><a href="./">Προγνωστικά</a> › <?= e($t['leagueName']) ?> › <?= e($hn) ?> – <?= e($an) ?></div>
+  <h1><?= e($hn) ?> – <?= e($an) ?>: Προγνωστικά Over 1.5</h1>
+  <p style="color:var(--mut)"><?= e($t['leagueName']) ?> · <?= e(gr_day($t['ts'])) ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας)</p>
+  <div class="mhead">
+    <div class="team home"><?= crest($t['home']) ?><div class="nm"><?= e($hn) ?></div><div class="hint">Γηπεδούχος</div></div>
+    <div class="ring" style="--p:<?= $t['conf'] ?>;--rc:<?= $rc ?>"><div><span><b><?= $t['conf'] ?>%</b><small>OVER 1.5</small></span></div></div>
+    <div class="team away"><?= crest($t['away']) ?><div class="nm"><?= e($an) ?></div><div class="hint">Φιλοξενούμενος</div></div>
+  </div>
+  <div class="kv">
+    <div class="stat"><div class="v"><?= $t['hits'] ?>/6</div><div class="l">Over 1.5 στα πρόσφατα</div></div>
+    <div class="stat"><div class="v"><?= number_format($t['xg'], 2) ?></div><div class="l">Αναμενόμενα γκολ</div></div>
+    <div class="stat"><div class="v"><?= number_format($t['fair'], 2) ?></div><div class="l">Δίκαιη απόδοση</div></div>
+    <div class="stat"><div class="v" style="font-size:16px"><?= e($tl) ?></div><div class="l">Κατηγορία</div></div>
+  </div>
+  <?= ad_slot(ADSENSE_SLOT_TOP, 'ad-top') ?>
+  <h2>Ανάλυση</h2>
+  <p>Η <b><?= e($hn) ?></b> είδε 2+ γκολ σε <?= $H['hits'] ?> από τα τελευταία 3 παιχνίδια πρωταθλήματος, με μέσο όρο <?= number_format($H['avgTot'], 1) ?> γκολ ανά αγώνα (<?= number_format($H['avgFor'], 1) ?> υπέρ, <?= number_format($H['avgAg'], 1) ?> κατά).
+  Η <b><?= e($an) ?></b> είδε Over 1.5 σε <?= $A['hits'] ?> από τα 3, με μέσο όρο <?= number_format($A['avgTot'], 1) ?> γκολ (<?= number_format($A['avgFor'], 1) ?> υπέρ, <?= number_format($A['avgAg'], 1) ?> κατά).</p>
+  <p>Συνδυάζοντας την επίθεση κάθε ομάδας με την άμυνα του αντιπάλου, τα αναμενόμενα γκολ του αγώνα βγαίνουν <b><?= number_format($t['xg'], 2) ?></b>. Η τελική μας εκτίμηση για <b>Over 1.5 γκολ είναι <?= $t['conf'] ?>%</b>, που αντιστοιχεί σε δίκαιη απόδοση <?= number_format($t['fair'], 2) ?>. Αν η απόδοση που βρίσκεις είναι μεγαλύτερη, το στοίχημα έχει αξία σύμφωνα με το μοντέλο.</p>
+  <div class="form" style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:18px 0">
+    <div><h4>Τελευταία 3 · <?= e($hn) ?> <span><?= $H['hits'] ?>/3</span></h4><ul><?= form_rows($H) ?></ul></div>
+    <div><h4>Τελευταία 3 · <?= e($an) ?> <span><?= $A['hits'] ?>/3</span></h4><ul><?= form_rows($A) ?></ul></div>
+  </div>
+  <?php if (TELEGRAM_URL): ?><div class="cta-tg"><div><b>Θες τα tips κάθε πρωί στο κινητό;</b><p>Δωρεάν κανάλι Telegram με τις ισχυρότερες επιλογές και τα αποτελέσματα.</p></div><a class="btn-tg" href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener">Μπες στο κανάλι</a></div><?php endif; ?>
+  <?php if (AFF_URL): ?><p><?= aff_btn(AFF_OFFER) ?></p><?php endif; ?>
+  <?php $others = array_slice(array_values(array_filter($tips, fn($o) => $o['id'] !== $t['id'] && date('Y-m-d', $o['ts']) === date('Y-m-d', $t['ts']))), 0, 8);
+  if (!$others) $others = array_slice(array_values(array_filter($tips, fn($o) => $o['id'] !== $t['id'])), 0, 8);
+  if ($others): ?>
+  <h2>Άλλα προγνωστικά Over 1.5</h2>
+  <ul><?php foreach ($others as $o): ?>
+    <li><a href="<?= e(match_url($o)) ?>" style="color:var(--acc)"><?= e($o['home']['n']) ?> – <?= e($o['away']['n']) ?></a> · <?= e(gr_day($o['ts'])) ?> · <?= $o['conf'] ?>%</li>
+  <?php endforeach; ?></ul><?php endif; ?>
+  <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
+  <p style="font-size:12px;color:var(--mut2);margin-top:18px">Στατιστική εκτίμηση, όχι εγγύηση. 21+ | Παίξε υπεύθυνα.</p>
+  <script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org', '@type' => 'SportsEvent', 'name' => "$hn vs $an", 'startDate' => date('c', $t['ts']), 'sport' => 'Soccer', 'homeTeam' => ['@type' => 'SportsTeam', 'name' => $hn], 'awayTeam' => ['@type' => 'SportsTeam', 'name' => $an], 'location' => ['@type' => 'Place', 'name' => $hn . ' stadium'], 'eventStatus' => 'https://schema.org/EventScheduled'], JSON_UNESCAPED_UNICODE) ?></script>
+</div>
+
+<?php elseif ($page === 'results'): $tr = load_tracked(); $all = track_stats($tr, 3650); $m30 = track_stats($tr, 30);
+  $settled = array_filter($tr, fn($r) => isset($r['res'])); uasort($settled, fn($a, $b) => $b['ts'] <=> $a['ts']); ?>
+<div class="wrap page" style="max-width:900px">
+  <h1>Ιστορικό επιτυχίας</h1>
+  <p>Κάθε πρόταση που εμφανίζεται στο site καταγράφεται αυτόματα πριν τη σέντρα και ελέγχεται μετά το τέλος του αγώνα. Δεν σβήνουμε τίποτα.</p>
+  <div class="stats" style="margin:20px 0">
+    <div class="stat"><div class="v"><?= pct($m30['w'], $m30['n']) ?></div><div class="l">Επιτυχία 30 ημερών (<?= $m30['n'] ?>)</div></div>
+    <div class="stat"><div class="v"><?= pct($all['w'], $all['n']) ?></div><div class="l">Συνολικά (<?= $all['n'] ?>)</div></div>
+  </div>
+  <h2>Ανά κατηγορία βεβαιότητας (30 ημέρες)</h2>
+  <div class="tiers"><?php foreach ($m30['tiers'] as $lbl => $x): ?><div class="stat"><div class="v"><?= pct($x['w'], $x['n']) ?></div><div class="l"><?= e($lbl) ?>% · <?= $x['w'] ?>/<?= $x['n'] ?></div></div><?php endforeach; ?></div>
+  <h2>Τελευταίες προτάσεις</h2>
+  <?php if (!$settled): ?><p>Οι πρώτες προτάσεις θα κριθούν με την επόμενη αγωνιστική.</p><?php else: ?>
+  <div style="overflow-x:auto"><table class="rtab"><tr><th>Ημ/νία</th><th>Αγώνας</th><th>%</th><th>Σκορ</th><th></th></tr>
+  <?php foreach (array_slice($settled, 0, 150, true) as $r): ?>
+    <tr><td><?= date('d/m', $r['ts']) ?></td><td><?= e($r['h']) ?> – <?= e($r['a']) ?></td><td><?= $r['conf'] ?>%</td><td class="sc"><?= $r['res'][0] ?>-<?= $r['res'][1] ?></td><td class="<?= $r['hit'] ? 'ok' : 'no' ?>"><?= $r['hit'] ? '✓' : '✕' ?></td></tr>
+  <?php endforeach; ?></table></div><?php endif; ?>
+</div>
+
 <?php elseif ($page === 'method'): ?>
 <div class="wrap page">
   <h1>Πώς βγαίνουν τα προγνωστικά Over 1.5</h1>
@@ -335,11 +443,12 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <footer><div class="wrap">
   <div class="ft">
     <div class="rg"><span class="r18">21+</span><span>Παίξε υπεύθυνα. Το στοίχημα ενέχει κίνδυνο εθισμού και απώλειας περιουσίας. Γραμμή βοήθειας: 1114.</span></div>
-    <nav><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
+    <nav><a href="?p=results">Ιστορικό</a><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
   </div>
   <p class="legal">© <?= date('Y') ?> <?= e(SITE_NAME) ?> · Τα προγνωστικά είναι στατιστικές εκτιμήσεις, όχι εγγυήσεις. Δεδομένα: football-data.org · Ορισμένοι σύνδεσμοι είναι διαφημιστικοί.</p>
 </div></footer>
 
+<?php if (TELEGRAM_URL): ?><div id="tgbar"><span>📲 Δωρεάν tips κάθε πρωί</span><a href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener">Telegram</a></div><?php endif; ?>
 <div id="ck"><span>Χρησιμοποιούμε cookies για διαφημίσεις και στατιστικά. <a href="?p=privacy">Περισσότερα</a></span><button id="ckok">Αποδοχή</button></div>
 
 <script>

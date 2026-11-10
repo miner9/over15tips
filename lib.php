@@ -214,3 +214,69 @@ function form_rows(array $S): string {
     }
     return $o;
 }
+
+/* ---------- URLs ---------- */
+
+function slugify(string $s): string {
+    $s = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s) ?: $s;
+    return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($s)), '-');
+}
+function match_slug(array $t): string {
+    return slugify($t['home']['n'] . ' ' . $t['away']['n']) . '-' . date('Y-m-d', $t['ts']);
+}
+function is_static(): bool { return defined('STATIC_BUILD'); }
+function page_url(string $p): string {
+    if (is_static()) return $p === 'home' ? '/' : "/$p.html";
+    return $p === 'home' ? './' : "?p=$p";
+}
+function match_url(array $t): string {
+    return is_static() ? '/agonas/' . match_slug($t) . '.html' : '?p=match&id=' . $t['id'];
+}
+
+/* ---------- Ιστορικό επιτυχίας ---------- */
+
+const TRACK_FILE = __DIR__ . '/data/tracked.json';
+
+/** Καταγράφει κάθε πρόταση πριν τη σέντρα και βάζει αποτέλεσμα όταν τελειώσει ο αγώνας. */
+function track_tips(array $tips, array $data): array {
+    $tr = is_file(TRACK_FILE) ? (json_decode(file_get_contents(TRACK_FILE), true) ?: []) : [];
+    foreach ($tips as $t) {
+        $k = (string)$t['id'];
+        if (isset($tr[$k]['res'])) continue;
+        $tr[$k] = ['ts' => $t['ts'], 'lg' => $t['league'], 'h' => $t['home']['n'], 'a' => $t['away']['n'], 'conf' => $t['conf']];
+    }
+    $byId = [];
+    foreach ($data['leagues'] as $ms) foreach ($ms as $m) $byId[(string)$m['id']] = $m;
+    foreach ($tr as $k => &$r) {
+        if (isset($r['res'])) continue;
+        $m = $byId[$k] ?? null;
+        if ($m && $m['status'] === 'FINISHED' && $m['hg'] !== null) {
+            $r['res'] = [$m['hg'], $m['ag']];
+            $r['hit'] = $m['hg'] + $m['ag'] >= 2;
+        }
+    }
+    unset($r);
+    if (!is_demo()) { @mkdir(dirname(TRACK_FILE), 0755, true); file_put_contents(TRACK_FILE, json_encode($tr)); }
+    return $tr;
+}
+
+function load_tracked(): array {
+    return is_file(TRACK_FILE) ? (json_decode(file_get_contents(TRACK_FILE), true) ?: []) : [];
+}
+
+/** Στατιστικά τελευταίων $days ημερών, συνολικά και ανά κατηγορία βεβαιότητας. */
+function track_stats(array $tr, int $days = 30, int $minConf = 0): array {
+    $from = time() - $days * 86400;
+    $tiers = ['85+' => [85, 101], '75–84' => [75, 85], '60–74' => [60, 75]];
+    $out = ['n' => 0, 'w' => 0, 'tiers' => []];
+    foreach ($tiers as $lbl => $_) $out['tiers'][$lbl] = ['n' => 0, 'w' => 0];
+    foreach ($tr as $r) {
+        if (!isset($r['res']) || $r['ts'] < $from || $r['conf'] < $minConf) continue;
+        $out['n']++; $out['w'] += $r['hit'] ? 1 : 0;
+        foreach ($tiers as $lbl => [$lo, $hi]) if ($r['conf'] >= $lo && $r['conf'] < $hi) {
+            $out['tiers'][$lbl]['n']++; $out['tiers'][$lbl]['w'] += $r['hit'] ? 1 : 0;
+        }
+    }
+    return $out;
+}
+function pct(int $w, int $n): string { return $n ? round(100 * $w / $n) . '%' : '—'; }
