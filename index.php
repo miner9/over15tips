@@ -46,6 +46,11 @@ if ($M) {
 <meta property="og:title" content="<?= e($titles[$page]) ?>">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0a0e13">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:image" content="<?= e(SITE_URL) ?>/assets/og.png">
+<meta property="og:url" content="<?= e($canon) ?>">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <?php if (ADSENSE_CLIENT): ?><meta name="google-adsense-account" content="<?= e(ADSENSE_CLIENT) ?>"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= e(ADSENSE_CLIENT) ?>" crossorigin="anonymous"></script><?php endif; ?>
