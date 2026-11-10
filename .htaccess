@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "^(config|lib|cron|telegram)\.php$">
+  Require all denied
+</FilesMatch>

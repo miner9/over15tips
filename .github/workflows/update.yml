@@ -1,0 +1,59 @@
+name: Update site & Telegram
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # ανανέωση site κάθε 3 ώρες
+    - cron: '0 7 * * *'     # 09:00 Ελλάδας (χειμώνας): αποτελέσματα χθες
+    - cron: '30 8 * * *'    # 10:30 Ελλάδας (χειμώνας): tips ημέρας
+  workflow_dispatch:
+    inputs:
+      telegram:
+        description: 'Telegram: none / tips / results'
+        default: 'none'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+env:
+  FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}
+  TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+  TG_CHAT_ID: ${{ vars.TG_CHAT_ID }}
+  TELEGRAM_URL: ${{ vars.TELEGRAM_URL }}
+  SITE_URL: ${{ vars.SITE_URL }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Telegram — αποτελέσματα
+        if: github.event.schedule == '0 7 * * *' || inputs.telegram == 'results'
+        run: php telegram.php results
+
+      - name: Telegram — tips
+        if: github.event.schedule == '30 8 * * *' || inputs.telegram == 'tips'
+        run: php telegram.php tips
+
+      - name: Build site
+        run: php build.php
+
+      - name: Save Telegram history
+        run: |
+          git config user.name "over15-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/posted
+          git diff --cached --quiet || (git commit -m "telegram history" && git push)
+
+      - name: Publish to branch "site" (Cloudflare Pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: site
+          publish_dir: ./dist
+          force_orphan: true
+          commit_message: "site update"

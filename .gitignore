@@ -1,0 +1,4 @@
+dist/
+data/cache.json
+data/refresh.lock
+*.tmp
