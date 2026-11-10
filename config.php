@@ -31,7 +31,7 @@ const TIMEZONE     = 'Europe/Athens';
 // ================== ΕΣΟΔΑ ==================
 
 // Google AdSense (π.χ. 'ca-pub-1234567890123456'). Κενό = δείχνει placeholder.
-const ADSENSE_CLIENT = '';
+const ADSENSE_CLIENT = 'ca-pub-9871126678793901';
 const ADSENSE_SLOT_TOP    = '';
 const ADSENSE_SLOT_INFEED = '';
 const ADSENSE_SLOT_BOTTOM = '';

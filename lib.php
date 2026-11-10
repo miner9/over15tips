@@ -192,6 +192,7 @@ function ad_slot(string $slot, string $cls = ''): string {
     if (ADSENSE_CLIENT && $slot) {
         return '<div class="ad ' . $cls . '"><span class="ad-label">Διαφήμιση</span><ins class="adsbygoogle" style="display:block" data-ad-client="' . e(ADSENSE_CLIENT) . '" data-ad-slot="' . e($slot) . '" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script></div>';
     }
+    if (ADSENSE_CLIENT) return ''; // live site: όχι κενά κουτιά μέχρι να μπουν ad units (ή Auto ads)
     return '<div class="ad ad-ph ' . $cls . '"><span class="ad-label">Διαφήμιση</span><div>Θέση AdSense</div></div>';
 }
 

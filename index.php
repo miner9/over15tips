@@ -48,7 +48,7 @@ if ($M) {
 <meta name="theme-color" content="#0a0e13">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<?php if (ADSENSE_CLIENT): ?><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= e(ADSENSE_CLIENT) ?>" crossorigin="anonymous"></script><?php endif; ?>
+<?php if (ADSENSE_CLIENT): ?><meta name="google-adsense-account" content="<?= e(ADSENSE_CLIENT) ?>"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= e(ADSENSE_CLIENT) ?>" crossorigin="anonymous"></script><?php endif; ?>
 <?php if (GA_ID): ?><script async src="https://www.googletagmanager.com/gtag/js?id=<?= e(GA_ID) ?>"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','<?= e(GA_ID) ?>');</script><?php endif; ?>
 <style>
 :root{
