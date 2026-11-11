@@ -1,8 +1,12 @@
 <?php
 require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/articles.php';
 
 $page = $_GET['p'] ?? 'home';
-if (!in_array($page, ['home', 'over25', 'gg', 'method', 'privacy', 'terms', 'match', 'results', 'live', 'table'], true)) $page = 'home';
+if (!in_array($page, ['home', 'over25', 'gg', 'method', 'privacy', 'terms', 'match', 'results', 'live', 'table', 'art', 'paroli'], true)) $page = 'home';
+$ART = $page === 'art' ? (ARTICLES[$_GET['a'] ?? ''] ?? null) : null;
+if ($page === 'art' && !$ART) $page = 'home';
+if ($ART) $ART = array_map(fn($x) => str_replace('{SITE}', SITE_NAME, $x), $ART);
 $TL = ($page === 'table' && isset(LEAGUES[$_GET['lg'] ?? ''])) ? $_GET['lg'] : array_key_first(LEAGUES);
 
 $LIST_PAGES = ['home' => 'o15', 'over25' => 'o25', 'gg' => 'gg'];
@@ -31,6 +35,8 @@ $titles = [
     'over25'  => 'Over 2.5 Προγνωστικά Σήμερα — Αγώνες με 3+ Γκολ | ' . SITE_NAME,
     'gg'      => 'Γκολ-Γκολ (GG) Προγνωστικά Σήμερα — Σκοράρουν και οι δύο | ' . SITE_NAME,
     'table'   => 'Βαθμολογία ' . (LEAGUES[$TL] ?? '') . ' ' . season_label() . ' — Over 1.5, Over 2.5 & GG ανά ομάδα | ' . SITE_NAME,
+    'paroli'  => 'Παρολί Ημέρας — Τι να παίξω σήμερα (Over 1.5, Over 2.5, GG) | ' . SITE_NAME,
+    'art'     => $ART ? (str_contains($ART[0], SITE_NAME) ? $ART[0] : $ART[0] . ' | ' . SITE_NAME) : '',
     'live'    => 'Live Score Σήμερα — Ζωντανά Αποτελέσματα & Προγνωστικά | ' . SITE_NAME,
 ];
 $HERO = [
@@ -39,11 +45,13 @@ $HERO = [
     'gg'  => ['Γκολ-Γκολ — σκοράρουν και οι δύο ομάδες', 'για γκολ και από τις δύο ομάδες'],
 ];
 $desc = $page === 'over25' ? 'Δωρεάν προγνωστικά Over 2.5 γκολ για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε ' . count(LEAGUES) . ' ευρωπαϊκές διοργανώσεις.'
+     : ($page === 'art' ? $ART[1]
+     : ($page === 'paroli' ? 'Το παρολί ημέρας: διπλό και τριπλό Over 1.5, παρολί Over 2.5 και Γκολ-Γκολ, με συνδυαστική πιθανότητα και δίκαιη απόδοση. Δωρεάν, κάθε μέρα.'
      : ($page === 'table' ? 'Βαθμολογία ' . LEAGUES[$TL] . ' ' . season_label() . ': θέσεις, βαθμοί, γκολ και ποσοστό Over 1.5, Over 2.5 και Γκολ-Γκολ για κάθε ομάδα της σεζόν.'
      : ($page === 'live' ? 'Live score για Premier League, La Liga, Serie A, Bundesliga, Ligue 1 και άλλα, μαζί με τα προγνωστικά Over 1.5, Over 2.5 και Γκολ-Γκολ για κάθε αγώνα.'
      : ($page === 'gg' ? 'Δωρεάν προγνωστικά Γκολ-Γκολ (GG) για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε ' . count(LEAGUES) . ' ευρωπαϊκές διοργανώσεις.'
-     : 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.')));
-$canon = SITE_URL . ($page === 'home' ? '/' : ($page === 'table' ? '/vathmologia/' . slugify(LEAGUES[$TL]) : '/' . $page));
+     : 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.')))));
+$canon = SITE_URL . ($page === 'home' ? '/' : ($page === 'table' ? '/vathmologia/' . slugify(LEAGUES[$TL]) : ($page === 'art' ? '/' . $_GET['a'] : '/' . $page)));
 if ($M) {
     $mn = $M['home']['g'] . ' – ' . $M['away']['g'];
     $mnL = $M['home']['n'] . ' – ' . $M['away']['n'];
@@ -146,6 +154,14 @@ select{background:var(--card);color:var(--tx);border:1px solid var(--line2);bord
 .lvt .s{text-align:center;width:96px}.lvt .s b{font-family:ui-monospace,Menlo,monospace;font-size:15px}.lvt .p{text-align:right;white-space:nowrap}
 .lvt .p a{display:inline-block;margin-left:4px;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;background:var(--card);color:var(--mut)}
 .lvt .p a.hi{background:var(--acc-bg);color:var(--acc)}.lvt tr.lvon .s b{color:#ff6b6b}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}.pc{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.pc-h{padding:14px 16px;border-bottom:1px solid var(--line)}.pc-h b{display:block;font-size:16px}.pc-h small{color:var(--mut);font-size:12.5px}
+.pc-r{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);color:var(--tx)}.pc-r:hover{background:rgba(255,255,255,.03)}
+.pc-r small{display:block;color:var(--mut);font-size:12px;margin-top:2px}.pc-m{text-align:right;font-weight:700;color:var(--acc);font-size:13px;white-space:nowrap}
+.pc-f{display:flex;justify-content:space-between;padding:12px 16px;font-size:13px;color:var(--mut)}.pc-f b{color:var(--tx);font-family:ui-monospace,Menlo,monospace;font-size:15px;margin-left:4px}
+.art h2{margin-top:28px}.art ul{padding-left:20px}.art li{margin:6px 0}.art p,.art li{line-height:1.7}
+.tbl{border-collapse:collapse;margin:10px 0 6px;width:100%;max-width:520px}.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;font-size:14px}.tbl th{color:var(--mut);font-size:12px;text-transform:uppercase}
+@media(max-width:700px){.pgrid{grid-template-columns:1fr}}
 .tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:16px 0 18px;padding-bottom:2px}.tabs a{white-space:nowrap;padding:7px 13px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:13px;font-weight:600}.tabs a.on{background:var(--acc-bg);color:var(--acc);border-color:transparent}
 .stt{width:100%;border-collapse:collapse;font-size:14px;margin:4px 0 12px}.stt th{font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.04em;padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}
 .stt td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums}.stt .tm{text-align:left;font-weight:600;white-space:nowrap}.stt .tm img{vertical-align:-5px;margin-right:9px}
@@ -259,7 +275,8 @@ select{background:var(--card);color:var(--tx);border:1px solid var(--line2);bord
 /* footer */
 footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;font-size:13px;color:var(--mut)}
 .ft{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-start}
-.ft nav{flex:none}
+.ft nav{flex:1 1 520px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 0}
+.page p a,.page li a,.page td a{color:var(--acc)}.page p a:hover,.page li a:hover{text-decoration:underline}
 .rg{display:flex;gap:12px;align-items:center;max-width:640px}
 .r18{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--red);display:grid;place-items:center;font-weight:800;color:var(--red);font-size:13px}
 .legal{margin-top:20px;font-size:11px;color:var(--mut2)}
@@ -278,10 +295,10 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
     <a href="./" class="<?= $page === 'home' ? 'on' : '' ?>">Over 1.5</a>
     <a href="?p=over25" class="<?= $page === 'over25' ? 'on' : '' ?>">Over 2.5</a>
     <a href="?p=gg" class="<?= $page === 'gg' ? 'on' : '' ?>">Γκολ-Γκολ</a>
+    <a href="?p=paroli" class="<?= $page === 'paroli' ? 'on' : '' ?>">Παρολί</a>
     <a href="?p=live" class="<?= $page === 'live' ? 'on' : '' ?>"><span class="ldot"></span>Live</a>
     <a href="<?= e(table_url(array_key_first(LEAGUES))) ?>" class="<?= $page === 'table' ? 'on' : '' ?>">Βαθμολογίες</a>
     <a href="?p=results" class="<?= $page === 'results' ? 'on' : '' ?>">Ιστορικό</a>
-    <a href="?p=method" class="<?= $page === 'method' ? 'on' : '' ?>">Μεθοδολογία</a>
   </nav>
   <?php if (TELEGRAM_URL): ?><a class="btn-tg" href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.3 9.6 19c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.8.4 1.3.2 1.5-.7L20.9 5c.3-1.2-.4-1.7-1.2-1.4L3.4 9.9c-1.1.4-1.1 1.1-.2 1.4l4.2 1.3 9.7-6.1c.5-.3.9-.1.5.2"/></svg>Telegram</a><?php endif; ?>
 </div></header>
@@ -435,6 +452,53 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org', '@type' => 'SportsEvent', 'name' => "$hn vs $an", 'startDate' => date('c', $t['ts']), 'sport' => 'Soccer', 'homeTeam' => ['@type' => 'SportsTeam', 'name' => $hn], 'awayTeam' => ['@type' => 'SportsTeam', 'name' => $an], 'endDate' => date('c', $t['ts'] + 7200), 'image' => [SITE_URL . '/assets/og.png'], 'description' => "$hn – $an ({$t['leagueName']}): Over 1.5 {$t['m']['o15']['conf']}%, Over 2.5 {$t['m']['o25']['conf']}%, Γκολ-Γκολ {$t['m']['gg']['conf']}%.", 'location' => ['@type' => 'Place', 'name' => 'Γήπεδο ' . $hn, 'address' => ['@type' => 'PostalAddress', 'name' => $t['home']['n'], 'addressCountry' => ['PL' => 'GB', 'ELC' => 'GB', 'PD' => 'ES', 'SA' => 'IT', 'BL1' => 'DE', 'FL1' => 'FR', 'DED' => 'NL', 'PPL' => 'PT'][$t['league']] ?? 'EU']], 'organizer' => ['@type' => 'Organization', 'name' => $t['leagueName']], 'performer' => [['@type' => 'SportsTeam', 'name' => $hn], ['@type' => 'SportsTeam', 'name' => $an]], 'eventStatus' => 'https://schema.org/EventScheduled', 'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode'], JSON_UNESCAPED_UNICODE) ?></script>
 </div>
 
+<?php elseif ($page === 'art'): ?>
+<div class="wrap page art" style="max-width:820px">
+  <div class="crumbs"><a href="./">Αρχική</a> › <?= str_starts_with($_GET['a'], 'odigos/') ? 'Οδηγοί › ' : '' ?><?= e($ART[2]) ?></div>
+  <h1><?= e($ART[2]) ?></h1>
+  <?= $ART[3] ?>
+  <?php if (str_starts_with($_GET['a'], 'odigos/')): ?>
+  <h2>Άλλοι οδηγοί</h2>
+  <ul><?php foreach (ARTICLES as $sl => $a): if ($sl === $_GET['a'] || !str_starts_with($sl, 'odigos/')) continue; ?><li><a href="<?= e(article_url($sl)) ?>"><?= e($a[2]) ?></a></li><?php endforeach; ?></ul>
+  <?php endif; ?>
+  <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
+</div>
+
+<?php elseif ($page === 'paroli'):
+  $up = fn($mk) => array_values(array_filter(analyse($data, $mk), fn($t) => $t['ts'] > time()));
+  $o15 = $up('o15');
+  $cnt = []; foreach ($o15 as $t) if ($t['conf'] >= 70) $cnt[date('Y-m-d', $t['ts'])] = ($cnt[date('Y-m-d', $t['ts'])] ?? 0) + 1;
+  ksort($cnt); $day = null; foreach ($cnt as $d => $c) if ($c >= 3) { $day = $d; break; }
+  $day ??= array_key_first($cnt);
+  $byConf = function ($list, $n) use ($day) { $d = array_values(array_filter($list, fn($t) => date('Y-m-d', $t['ts']) === $day)); usort($d, fn($a, $b) => $b['conf'] <=> $a['conf']); return array_slice($d, 0, $n); };
+  $coupons = $day ? [
+    ['Διπλό Over 1.5', 'Τα 2 πιο σίγουρα Over 1.5 της ημέρας', 'Over 1.5', $byConf($o15, 2)],
+    ['Τριπλό Over 1.5', 'Τα 3 πιο σίγουρα Over 1.5 της ημέρας', 'Over 1.5', $byConf($o15, 3)],
+    ['Διπλό Over 2.5', 'Οι 2 αγώνες με τα περισσότερα αναμενόμενα γκολ', 'Over 2.5', $byConf($up('o25'), 2)],
+    ['Διπλό Γκολ-Γκολ', 'Οι 2 αγώνες που πιο πιθανά σκοράρουν και οι δύο', 'Γκολ-Γκολ', $byConf($up('gg'), 2)],
+  ] : []; ?>
+<div class="wrap page" style="max-width:900px">
+  <h1>Παρολί ημέρας<?= $day ? ' — ' . e(gr_day(strtotime($day))) . (in_array(gr_day(strtotime($day)), ['Σήμερα', 'Αύριο'], true) ? ' ' . date('d/m', strtotime($day)) : '') : '' ?></h1>
+  <p>Έτοιμα κουπόνια με τα πιο δυνατά σημεία της αγωνιστικής, όπως τα βγάζει το στατιστικό μας μοντέλο. Δίπλα σε κάθε κουπόνι θα βρεις τη <b>συνδυαστική πιθανότητα</b> και τη <b>δίκαιη απόδοση</b>: αν η εταιρεία δίνει μεγαλύτερη απόδοση, το παρολί έχει αξία. <a href="<?= e(article_url('odigos/paroli')) ?>">Πώς λειτουργεί το παρολί →</a></p>
+  <?= ad_slot(ADSENSE_SLOT_TOP, 'ad-top') ?>
+  <?php if (!array_filter($coupons, fn($c) => count($c[3]) >= 2)): ?><div class="empty">Δεν υπάρχουν αρκετά δυνατά σημεία αυτή τη στιγμή. Δες τα <a href="./">προγνωστικά</a> για τις επόμενες ημέρες.</div><?php endif; ?>
+  <div class="pgrid">
+  <?php foreach ($coupons as [$ttl, $sub, $lbl, $sel]): if (count($sel) < 2) continue;
+    $p = array_product(array_map(fn($t) => $t['conf'] / 100, $sel)); $fo = array_product(array_map(fn($t) => $t['fair'], $sel)); ?>
+    <div class="pc">
+      <div class="pc-h"><b><?= e($ttl) ?></b><small><?= e($sub) ?></small></div>
+      <?php foreach ($sel as $t): ?>
+      <a class="pc-r" href="<?= e(match_url($t)) ?>"><span><b><?= e($t['home']['g']) ?> – <?= e($t['away']['g']) ?></b><small><?= e($t['leagueName']) ?> · <?= date('H:i', $t['ts']) ?></small></span><span class="pc-m"><?= e($lbl) ?><small><?= $t['conf'] ?>% · <?= number_format($t['fair'], 2) ?></small></span></a>
+      <?php endforeach; ?>
+      <div class="pc-f"><span>Πιθανότητα <b><?= round($p * 100) ?>%</b></span><span>Δίκαιη απόδοση <b><?= number_format($fo, 2) ?></b></span></div>
+    </div>
+  <?php endforeach; ?>
+  </div>
+  <p class="note">Τα κουπόνια ανανεώνονται αυτόματα κάθε 3 ώρες. Οι πιθανότητες είναι στατιστικές εκτιμήσεις και όχι εγγυήσεις · 21+ · Παίξε υπεύθυνα.</p>
+  <?php if (TELEGRAM_URL): ?><div class="cta-tg"><div><b>Το παρολί κάθε πρωί στο κινητό</b><p>Δωρεάν κανάλι Telegram με τα πιο δυνατά σημεία και τα αποτελέσματα.</p></div><a class="btn-tg" href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener">Μπες στο κανάλι</a></div><?php endif; ?>
+  <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
+</div>
+
 <?php elseif ($page === 'table'):
   $rows = $data['tables'][$TL] ?? []; $ms = $data['leagues'][$TL] ?? []; ?>
 <div class="wrap page" style="max-width:1080px">
@@ -558,7 +622,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <footer><div class="wrap">
   <div class="ft">
     <div class="rg"><span class="r18">21+</span><span>Παίξε υπεύθυνα. Το στοίχημα ενέχει κίνδυνο εθισμού και απώλειας περιουσίας. Γραμμή βοήθειας: 1114.</span></div>
-    <nav><a href="?p=live">Live score</a><a href="?p=over25">Over 2.5</a><a href="?p=gg">Γκολ-Γκολ</a><a href="?p=results">Ιστορικό</a><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
+    <nav><a href="?p=paroli">Παρολί ημέρας</a><a href="?p=live">Live score</a><a href="<?= e(article_url('odigos/over-15')) ?>">Τι είναι το Over 1.5</a><a href="<?= e(article_url('odigos/gkol-gkol')) ?>">Τι είναι το Γκολ-Γκολ</a><a href="<?= e(article_url('odigos/paroli')) ?>">Τι είναι το παρολί</a><a href="<?= e(article_url('sxetika')) ?>">Σχετικά</a><a href="<?= e(article_url('diafaneia')) ?>">Διαφάνεια</a><a href="?p=over25">Over 2.5</a><a href="?p=gg">Γκολ-Γκολ</a><a href="?p=results">Ιστορικό</a><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
   </div>
   <p class="legal">© <?= date('Y') ?> <?= e(SITE_NAME) ?> · Τα προγνωστικά είναι στατιστικές εκτιμήσεις, όχι εγγυήσεις. Δεδομένα: football-data.org · Ορισμένοι σύνδεσμοι είναι διαφημιστικοί.</p>
 </div></footer>

@@ -3,6 +3,7 @@
 if (PHP_SAPI !== 'cli') exit;
 define('STATIC_BUILD', true);
 require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/articles.php';
 if (!is_demo() && (!is_file(CACHE_FILE) || time() - filemtime(CACHE_FILE) > 600)) refresh_cache();
 
 $out = __DIR__ . '/dist';
@@ -18,15 +19,21 @@ function render(array $get): string {
     ob_start();
     include __DIR__ . '/index.php';
     $html = ob_get_clean();
-    foreach (['method', 'privacy', 'terms', 'results', 'over25', 'gg', 'live'] as $p) $html = str_replace('href="?p=' . $p . '"', 'href="/' . $p . '"', $html);
+    foreach (['method', 'privacy', 'terms', 'results', 'over25', 'gg', 'live', 'paroli'] as $p) $html = str_replace('href="?p=' . $p . '"', 'href="/' . $p . '"', $html);
     return str_replace('href="./"', 'href="/"', $html);
 }
 
-$pages = ['home' => 'index.html', 'over25' => 'over25.html', 'gg' => 'gg.html', 'method' => 'method.html', 'privacy' => 'privacy.html', 'terms' => 'terms.html', 'results' => 'results.html', 'live' => 'live.html'];
+$pages = ['home' => 'index.html', 'over25' => 'over25.html', 'gg' => 'gg.html', 'method' => 'method.html', 'privacy' => 'privacy.html', 'terms' => 'terms.html', 'results' => 'results.html', 'live' => 'live.html', 'paroli' => 'paroli.html'];
 $urls = [];
 foreach ($pages as $p => $file) {
     file_put_contents("$out/$file", render(['p' => $p]));
     $urls[] = SITE_URL . '/' . ($file === 'index.html' ? '' : basename($file, '.html'));
+}
+// οδηγοί / διαφάνεια / σχετικά
+foreach (array_keys(ARTICLES) as $sl) {
+    @mkdir(dirname("$out/$sl.html"), 0755, true);
+    file_put_contents("$out/$sl.html", render(['p' => 'art', 'a' => $sl]));
+    $urls[] = SITE_URL . '/' . $sl;
 }
 // βαθμολογίες
 @mkdir("$out/vathmologia", 0755, true);
