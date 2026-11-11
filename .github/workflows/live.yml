@@ -1,0 +1,42 @@
+name: Live alerts (Telegram)
+
+on:
+  schedule:
+    - cron: '*/10 11-23 * * *'   # 13:00–01:59 ώρα Ελλάδας (χειμώνας), κάθε 10 λεπτά
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live
+  cancel-in-progress: false
+
+jobs:
+  live:
+    # τρέχει μόνο όταν το repo είναι δημόσιο (δωρεάν απεριόριστα λεπτά) — σε ιδιωτικό παραλείπεται χωρίς χρέωση
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    env:
+      FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ vars.TG_CHAT_ID }}
+      SITE_URL: ${{ vars.SITE_URL }}
+      TELEGRAM_URL: ${{ vars.TELEGRAM_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Έλεγχος σημερινών tips
+        id: chk
+        run: |
+          d=$(TZ=Europe/Athens date +%F)
+          [ -f "data/posted/$d.json" ] && echo "go=1" >> "$GITHUB_OUTPUT" || echo "Κανένα tip σήμερα"
+      - name: Telegram — live ειδοποιήσεις
+        if: steps.chk.outputs.go == '1'
+        run: php telegram.php live
+      - name: Save
+        if: steps.chk.outputs.go == '1'
+        run: |
+          git config user.name "over15-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/posted
+          git diff --cached --quiet || (git commit -m "live alerts" && git pull --rebase -q && git push)

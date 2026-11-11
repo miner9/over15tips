@@ -128,9 +128,37 @@ function cmd_results(): void {
     tg_send($msg);
 }
 
+/** Live ειδοποίηση: όταν ένα σημερινό tip του καναλιού «περάσει» (2+ γκολ), στέλνει ✅ μία φορά. */
+function cmd_live(): void {
+    $day = date('Y-m-d');
+    $file = POSTED_DIR . "/$day.json";
+    if (!is_file($file)) { echo "Δεν στάλθηκαν tips σήμερα.\n"; return; }
+    $posted = json_decode(file_get_contents($file), true) ?: [];
+    $alFile = POSTED_DIR . "/alerts-$day.json";
+    $al = is_file($alFile) ? (json_decode(file_get_contents($alFile), true) ?: []) : [];
+    $todo = array_filter($posted, fn($p) => empty($al[$p['id']]));
+    if (!$todo) { echo "Όλα τα tips έχουν ήδη περάσει.\n"; return; }
+    $res = api_get('/matches?ids=' . implode(',', array_column($todo, 'id')));
+    if (!$res) { echo "Σφάλμα API.\n"; return; }
+    $byId = array_column($todo, null, 'id');
+    $sent = 0;
+    foreach ($res['matches'] ?? [] as $m) {
+        $p = $byId[$m['id']] ?? null;
+        $hg = $m['score']['fullTime']['home'] ?? null; $ag = $m['score']['fullTime']['away'] ?? null;
+        if (!$p || $hg === null || !in_array($m['status'], ['IN_PLAY', 'PAUSED', 'FINISHED'], true) || $hg + $ag < 2) continue;
+        $min = !empty($m['minute']) ? " ({$m['minute']}')" : ($m['status'] === 'PAUSED' ? ' (ημίχρονο)' : '');
+        $msg = "✅ <b>ΠΕΡΑΣΕ! Over 1.5</b>\n⚽ " . e($p['home']) . " <b>$hg-$ag</b> " . e($p['away']) . "$min\n📈 Το είχαμε στο {$p['conf']}%\n\n🔴 Live σκορ: " . e(SITE_URL) . "/live";
+        if (tg_send($msg)) { $al[$m['id']] = time(); $sent++; }
+    }
+    @mkdir(POSTED_DIR, 0755, true);
+    file_put_contents($alFile, json_encode($al));
+    echo "Ειδοποιήσεις: $sent\n";
+}
+
 match ($argv[1] ?? '') {
+    'live'    => cmd_live(),
     'tips'    => cmd_tips(),
     'next'    => cmd_tips(true),
     'results' => cmd_results(),
-    default   => print("Χρήση: php telegram.php tips|next|results\n"),
+    default   => print("Χρήση: php telegram.php tips|next|results|live\n"),
 };
