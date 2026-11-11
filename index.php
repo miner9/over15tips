@@ -439,7 +439,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <?= ad_slot(ADSENSE_SLOT_TOP, 'ad-top') ?>
   <?php if (!$days): ?><div class="empty">Δεν υπάρχουν προγραμματισμένοι αγώνες τις επόμενες ημέρες.</div><?php endif; ?>
   <?php foreach ($days as $day => $ms): usort($ms, fn($a, $b) => $a['ts'] <=> $b['ts'] ?: strcmp($a['lg'], $b['lg'])); ?>
-  <h2 class="lvh"><?= e(gr_day(strtotime($day))) ?> <?= date('d/m', strtotime($day)) ?></h2>
+  <h2 class="lvh"><?php $gl = gr_day(strtotime($day)); ?><?= e($gl) ?><?= in_array($gl, ['Σήμερα', 'Αύριο'], true) ? ' ' . date('d/m', strtotime($day)) : '' ?></h2>
   <div style="overflow-x:auto"><table class="lvt">
   <?php foreach ($ms as $m): $live = in_array($m['status'], ['IN_PLAY', 'PAUSED'], true); $t = $byId[$m['id']] ?? null; ?>
     <tr data-id="<?= (int)$m['id'] ?>" data-ts="<?= $m['ts'] ?>" class="<?= $live ? 'lvon' : '' ?>">
