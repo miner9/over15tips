@@ -43,8 +43,24 @@ function refresh_cache(): bool {
             'hg' => $m['score']['fullTime']['home'], 'ag' => $m['score']['fullTime']['away'],
         ], $data['matches']);
     }
+    // Βαθμολογίες (1 κλήση ανά διοργάνωση· αν αποτύχει κρατάμε την προηγούμενη)
+    $old = is_file(CACHE_FILE) ? (json_decode(file_get_contents(CACHE_FILE), true)['tables'] ?? []) : [];
+    $tables = [];
+    foreach (array_keys($leagues) as $code) {
+        sleep(PHP_SAPI === 'cli' ? 7 : 0);
+        $st = api_get("/competitions/$code/standings");
+        $tot = null;
+        foreach ($st['standings'] ?? [] as $g) if (($g['type'] ?? '') === 'TOTAL') { $tot = $g['table']; break; }
+        if (PHP_SAPI === 'cli') echo "$code βαθμολογία: " . ($tot ? count($tot) . ' ομάδες' : 'ΣΦΑΛΜΑ') . "\n";
+        if (!$tot) { if (isset($old[$code])) $tables[$code] = $old[$code]; continue; }
+        $tables[$code] = array_map(fn($r) => [
+            'p' => $r['position'], 'id' => $r['team']['id'], 'n' => $r['team']['shortName'] ?? $r['team']['name'], 'c' => $r['team']['crest'] ?? '',
+            'pg' => $r['playedGames'], 'w' => $r['won'], 'd' => $r['draw'], 'l' => $r['lost'],
+            'gf' => $r['goalsFor'], 'ga' => $r['goalsAgainst'], 'gd' => $r['goalDifference'], 'pts' => $r['points'],
+        ], $tot);
+    }
     if ($leagues) {
-        file_put_contents(CACHE_FILE . '.tmp', json_encode(['fetched' => time(), 'leagues' => $leagues]));
+        file_put_contents(CACHE_FILE . '.tmp', json_encode(['fetched' => time(), 'leagues' => $leagues, 'tables' => $tables]));
         rename(CACHE_FILE . '.tmp', CACHE_FILE);
     }
     flock($lock, LOCK_UN);
@@ -222,7 +238,22 @@ function demo_data(): array {
         }
         $leagues[$code] = $ms;
     }
-    return ['fetched' => time(), 'leagues' => $leagues];
+    $tables = [];
+    foreach ($leagues as $code => $ms) {
+        $t = [];
+        foreach ($ms as $m) {
+            if ($m['status'] !== 'FINISHED') continue;
+            foreach ([[$m['h'], $m['hg'], $m['ag']], [$m['a'], $m['ag'], $m['hg']]] as [$tm, $f, $a]) {
+                $r = &$t[$tm['id']]; $r ??= ['id' => $tm['id'], 'n' => $tm['n'], 'c' => '', 'pg' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0];
+                $r['pg']++; $r['gf'] += $f; $r['ga'] += $a; $r[$f > $a ? 'w' : ($f === $a ? 'd' : 'l')]++; unset($r);
+            }
+        }
+        foreach ($t as &$r) { $r['gd'] = $r['gf'] - $r['ga']; $r['pts'] = 3 * $r['w'] + $r['d']; } unset($r);
+        usort($t, fn($x, $y) => [$y['pts'], $y['gd'], $y['gf']] <=> [$x['pts'], $x['gd'], $x['gf']]);
+        foreach ($t as $i => &$r) $r['p'] = $i + 1; unset($r);
+        $tables[$code] = $t;
+    }
+    return ['fetched' => time(), 'leagues' => $leagues, 'tables' => $tables];
 }
 
 function poisson_rand(float $l): int {
@@ -275,6 +306,26 @@ function page_url(string $p): string {
     if (is_static()) return $p === 'home' ? '/' : "/$p";
     return $p === 'home' ? './' : "?p=$p";
 }
+function table_url(string $code): string {
+    return is_static() ? '/vathmologia/' . slugify(LEAGUES[$code] ?? $code) : '?p=table&lg=' . $code;
+}
+/** Θέση ομάδας στη βαθμολογία της διοργάνωσης (ή null). */
+function team_pos(array $data, string $code, int $teamId): ?int {
+    foreach ($data['tables'][$code] ?? [] as $r) if ($r['id'] === $teamId) return $r['p'];
+    return null;
+}
+/** Ποσοστά Over 1.5 / Over 2.5 / GG στους αγώνες της σεζόν μιας ομάδας (σε αυτή τη διοργάνωση). */
+function team_season_pct(array $matches, int $teamId): array {
+    $n = 0; $c = ['o15' => 0, 'o25' => 0, 'gg' => 0];
+    foreach ($matches as $m) {
+        if ($m['status'] !== 'FINISHED' || $m['hg'] === null || ($m['h']['id'] !== $teamId && $m['a']['id'] !== $teamId)) continue;
+        $n++;
+        foreach ($c as $k => $_) if (market_hit($k, $m['hg'], $m['ag'])) $c[$k]++;
+    }
+    return $n ? array_map(fn($v) => (int)round(100 * $v / $n), $c) + ['n' => $n] : ['o15' => null, 'o25' => null, 'gg' => null, 'n' => 0];
+}
+function season_label(): string { $y = (int)date('Y'); return (int)date('n') >= 7 ? "$y/" . ($y + 1) % 100 : ($y - 1) . '/' . $y % 100; }
+
 function match_url(array $t): string {
     return is_static() ? '/agonas/' . match_slug($t) : '?p=match&id=' . $t['id'];
 }

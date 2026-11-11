@@ -2,7 +2,8 @@
 require_once __DIR__ . '/lib.php';
 
 $page = $_GET['p'] ?? 'home';
-if (!in_array($page, ['home', 'over25', 'gg', 'method', 'privacy', 'terms', 'match', 'results', 'live'], true)) $page = 'home';
+if (!in_array($page, ['home', 'over25', 'gg', 'method', 'privacy', 'terms', 'match', 'results', 'live', 'table'], true)) $page = 'home';
+$TL = ($page === 'table' && isset(LEAGUES[$_GET['lg'] ?? ''])) ? $_GET['lg'] : array_key_first(LEAGUES);
 
 $LIST_PAGES = ['home' => 'o15', 'over25' => 'o25', 'gg' => 'gg'];
 $mk = $LIST_PAGES[$page] ?? 'o15';
@@ -29,6 +30,7 @@ $titles = [
     'results' => 'Ιστορικό Επιτυχίας Προγνωστικών Over 1.5, Over 2.5, Γκολ-Γκολ | ' . SITE_NAME,
     'over25'  => 'Over 2.5 Προγνωστικά Σήμερα — Αγώνες με 3+ Γκολ | ' . SITE_NAME,
     'gg'      => 'Γκολ-Γκολ (GG) Προγνωστικά Σήμερα — Σκοράρουν και οι δύο | ' . SITE_NAME,
+    'table'   => 'Βαθμολογία ' . (LEAGUES[$TL] ?? '') . ' ' . season_label() . ' — Over 1.5, Over 2.5 & GG ανά ομάδα | ' . SITE_NAME,
     'live'    => 'Live Score Σήμερα — Ζωντανά Αποτελέσματα & Προγνωστικά | ' . SITE_NAME,
 ];
 $HERO = [
@@ -36,11 +38,12 @@ $HERO = [
     'o25' => ['Over 2.5 γκολ — οι αγώνες με τα περισσότερα γκολ', 'για 3+ γκολ'],
     'gg'  => ['Γκολ-Γκολ — σκοράρουν και οι δύο ομάδες', 'για γκολ και από τις δύο ομάδες'],
 ];
-$desc = $page === 'over25' ? 'Δωρεάν προγνωστικά Over 2.5 γκολ για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε 8 ευρωπαϊκά πρωταθλήματα.'
+$desc = $page === 'over25' ? 'Δωρεάν προγνωστικά Over 2.5 γκολ για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε ' . count(LEAGUES) . ' ευρωπαϊκές διοργανώσεις.'
+     : ($page === 'table' ? 'Βαθμολογία ' . LEAGUES[$TL] . ' ' . season_label() . ': θέσεις, βαθμοί, γκολ και ποσοστό Over 1.5, Over 2.5 και Γκολ-Γκολ για κάθε ομάδα της σεζόν.'
      : ($page === 'live' ? 'Live score για Premier League, La Liga, Serie A, Bundesliga, Ligue 1 και άλλα, μαζί με τα προγνωστικά Over 1.5, Over 2.5 και Γκολ-Γκολ για κάθε αγώνα.'
-     : ($page === 'gg' ? 'Δωρεάν προγνωστικά Γκολ-Γκολ (GG) για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε 8 ευρωπαϊκά πρωταθλήματα.'
-     : 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.'));
-$canon = SITE_URL . ($page === 'home' ? '/' : '/' . $page);
+     : ($page === 'gg' ? 'Δωρεάν προγνωστικά Γκολ-Γκολ (GG) για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε ' . count(LEAGUES) . ' ευρωπαϊκές διοργανώσεις.'
+     : 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.')));
+$canon = SITE_URL . ($page === 'home' ? '/' : ($page === 'table' ? '/vathmologia/' . slugify(LEAGUES[$TL]) : '/' . $page));
 if ($M) {
     $mn = $M['home']['g'] . ' – ' . $M['away']['g'];
     $mnL = $M['home']['n'] . ' – ' . $M['away']['n'];
@@ -143,6 +146,12 @@ select{background:var(--card);color:var(--tx);border:1px solid var(--line2);bord
 .lvt .s{text-align:center;width:96px}.lvt .s b{font-family:ui-monospace,Menlo,monospace;font-size:15px}.lvt .p{text-align:right;white-space:nowrap}
 .lvt .p a{display:inline-block;margin-left:4px;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;background:var(--card);color:var(--mut)}
 .lvt .p a.hi{background:var(--acc-bg);color:var(--acc)}.lvt tr.lvon .s b{color:#ff6b6b}
+.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:16px 0 18px;padding-bottom:2px}.tabs a{white-space:nowrap;padding:7px 13px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:13px;font-weight:600}.tabs a.on{background:var(--acc-bg);color:var(--acc);border-color:transparent}
+.stt{width:100%;border-collapse:collapse;font-size:14px;margin:4px 0 12px}.stt th{font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.04em;padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}
+.stt td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums}.stt .tm{text-align:left;font-weight:600;white-space:nowrap}.stt .tm img{vertical-align:-5px;margin-right:9px}
+.stt .ps{color:var(--mut);width:30px}.stt .pt{font-weight:800}.stt .mk{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--mut)}.stt td.mk.hi{color:var(--acc);font-weight:700}
+.stt th.mk{color:var(--acc)}.note{font-size:13px;color:var(--mut)}
+@media(max-width:600px){.stt .x{display:none}.stt td,.stt th{padding:8px 4px;font-size:12.5px}}
 .lvh{font-size:15px;margin:22px 0 4px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
 @media(max-width:600px){.lvt .p{display:none;width:0}.lvt td{padding:10px 4px;font-size:13px}.lvt .t{width:44px}}
 .badge{margin-left:auto;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.02em}
@@ -269,6 +278,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
     <a href="?p=over25" class="<?= $page === 'over25' ? 'on' : '' ?>">Over 2.5</a>
     <a href="?p=gg" class="<?= $page === 'gg' ? 'on' : '' ?>">Γκολ-Γκολ</a>
     <a href="?p=live" class="<?= $page === 'live' ? 'on' : '' ?>"><span class="ldot"></span>Live</a>
+    <a href="<?= e(table_url(array_key_first(LEAGUES))) ?>" class="<?= $page === 'table' ? 'on' : '' ?>">Βαθμολογίες</a>
     <a href="?p=results" class="<?= $page === 'results' ? 'on' : '' ?>">Ιστορικό</a>
     <a href="?p=method" class="<?= $page === 'method' ? 'on' : '' ?>">Μεθοδολογία</a>
   </nav>
@@ -385,9 +395,9 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <h1><?= e($hn) ?> – <?= e($an) ?>: Προγνωστικά</h1>
   <p style="color:var(--mut)"><?= e($t['home']['n']) ?> – <?= e($t['away']['n']) ?> · <?= e($t['leagueName']) ?> · <?= ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][(int)date('w', $t['ts'])] ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας) <?= live_badge($t, 'o15') ?></p>
   <div class="mhead">
-    <div class="team home"><?= crest($t['home']) ?><div class="nm"><?= e($hn) ?></div><div class="hint">Γηπεδούχος</div></div>
+    <div class="team home"><?= crest($t['home']) ?><div class="nm"><?= e($hn) ?></div><div class="hint">Γηπεδούχος<?php $ps = team_pos($data, $t['league'], $t['home']['id']); if ($ps): ?> · <a href="<?= e(table_url($t['league'])) ?>"><?= $ps ?>η θέση</a><?php endif; ?></div></div>
     <div class="ring" style="--p:<?= $t['conf'] ?>;--rc:<?= $rc ?>"><div><span><b><?= $t['conf'] ?>%</b><small>OVER 1.5</small></span></div></div>
-    <div class="team away"><?= crest($t['away']) ?><div class="nm"><?= e($an) ?></div><div class="hint">Φιλοξενούμενος</div></div>
+    <div class="team away"><?= crest($t['away']) ?><div class="nm"><?= e($an) ?></div><div class="hint">Φιλοξενούμενος<?php $ps = team_pos($data, $t['league'], $t['away']['id']); if ($ps): ?> · <a href="<?= e(table_url($t['league'])) ?>"><?= $ps ?>η θέση</a><?php endif; ?></div></div>
   </div>
   <div class="kv">
     <div class="stat"><div class="v"><?= $t['hits'] ?>/6</div><div class="l">Over 1.5 στα πρόσφατα</div></div>
@@ -422,6 +432,32 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
   <p style="font-size:12px;color:var(--mut2);margin-top:18px">Στατιστική εκτίμηση, όχι εγγύηση. 21+ | Παίξε υπεύθυνα.</p>
   <script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org', '@type' => 'SportsEvent', 'name' => "$hn vs $an", 'startDate' => date('c', $t['ts']), 'sport' => 'Soccer', 'homeTeam' => ['@type' => 'SportsTeam', 'name' => $hn], 'awayTeam' => ['@type' => 'SportsTeam', 'name' => $an], 'endDate' => date('c', $t['ts'] + 7200), 'image' => [SITE_URL . '/assets/og.png'], 'description' => "$hn – $an ({$t['leagueName']}): Over 1.5 {$t['m']['o15']['conf']}%, Over 2.5 {$t['m']['o25']['conf']}%, Γκολ-Γκολ {$t['m']['gg']['conf']}%.", 'location' => ['@type' => 'Place', 'name' => 'Γήπεδο ' . $hn, 'address' => ['@type' => 'PostalAddress', 'name' => $t['home']['n'], 'addressCountry' => ['PL' => 'GB', 'ELC' => 'GB', 'PD' => 'ES', 'SA' => 'IT', 'BL1' => 'DE', 'FL1' => 'FR', 'DED' => 'NL', 'PPL' => 'PT'][$t['league']] ?? 'EU']], 'organizer' => ['@type' => 'Organization', 'name' => $t['leagueName']], 'performer' => [['@type' => 'SportsTeam', 'name' => $hn], ['@type' => 'SportsTeam', 'name' => $an]], 'eventStatus' => 'https://schema.org/EventScheduled', 'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode'], JSON_UNESCAPED_UNICODE) ?></script>
+</div>
+
+<?php elseif ($page === 'table'):
+  $rows = $data['tables'][$TL] ?? []; $ms = $data['leagues'][$TL] ?? []; ?>
+<div class="wrap page" style="max-width:1080px">
+  <h1>Βαθμολογία <?= e(LEAGUES[$TL]) ?> <?= season_label() ?></h1>
+  <p>Η βαθμολογία της <?= e(LEAGUES[$TL]) ?> και, για κάθε ομάδα, σε πόσους από τους αγώνες της φέτος έπιασε <b>Over 1.5</b>, <b>Over 2.5</b> και <b>Γκολ-Γκολ</b>.</p>
+  <div class="tabs"><?php foreach (LEAGUES as $c => $n): if (empty($data['tables'][$c])) continue; ?><a href="<?= e(table_url($c)) ?>" class="<?= $c === $TL ? 'on' : '' ?>"><?= e($n) ?></a><?php endforeach; ?></div>
+  <?= ad_slot(ADSENSE_SLOT_TOP, 'ad-top') ?>
+  <?php if (!$rows): ?><div class="empty">Η βαθμολογία δεν είναι διαθέσιμη αυτή τη στιγμή.</div><?php else: ?>
+  <div style="overflow-x:auto"><table class="stt">
+    <thead><tr><th>#</th><th class="tm">Ομάδα</th><th>Αγ</th><th class="x">Ν</th><th class="x">Ι</th><th class="x">Η</th><th class="x">Γκολ</th><th>Δ</th><th>Β</th><th class="mk">O1.5</th><th class="mk">O2.5</th><th class="mk">GG</th></tr></thead>
+    <tbody>
+    <?php foreach ($rows as $r): $pc = team_season_pct($ms, $r['id']); ?>
+      <tr>
+        <td class="ps"><?= $r['p'] ?></td>
+        <td class="tm"><?php if ($r['c']): ?><img src="<?= e($r['c']) ?>" alt="" width="20" height="20" loading="lazy"><?php endif; ?><?= e(gr_team($r['n'])) ?></td>
+        <td><?= $r['pg'] ?></td><td class="x"><?= $r['w'] ?></td><td class="x"><?= $r['d'] ?></td><td class="x"><?= $r['l'] ?></td>
+        <td class="x"><?= $r['gf'] ?>:<?= $r['ga'] ?></td><td><?= $r['gd'] > 0 ? '+' : '' ?><?= $r['gd'] ?></td><td class="pt"><?= $r['pts'] ?></td>
+        <?php foreach (['o15' => 75, 'o25' => 55, 'gg' => 55] as $k => $hi): $v = $pc[$k]; ?><td class="mk<?= $v !== null && $v >= $hi ? ' hi' : '' ?>"><?= $v === null ? '–' : $v . '%' ?></td><?php endforeach; ?>
+      </tr>
+    <?php endforeach; ?>
+    </tbody></table></div>
+  <p class="note">Τα ποσοστά O1.5 / O2.5 / GG δείχνουν σε πόσους από τους αγώνες της ομάδας στη φετινή <?= e(LEAGUES[$TL]) ?> μπήκαν 2+ γκολ, 3+ γκολ ή σκόραραν και οι δύο ομάδες. Με πράσινο οι ομάδες με υψηλά ποσοστά.</p>
+  <?php endif; ?>
+  <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
 </div>
 
 <?php elseif ($page === 'live'):

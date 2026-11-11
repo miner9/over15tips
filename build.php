@@ -28,6 +28,14 @@ foreach ($pages as $p => $file) {
     file_put_contents("$out/$file", render(['p' => $p]));
     $urls[] = SITE_URL . '/' . ($file === 'index.html' ? '' : basename($file, '.html'));
 }
+// βαθμολογίες
+@mkdir("$out/vathmologia", 0755, true);
+foreach (LEAGUES as $code => $name) {
+    if (empty($data['tables'][$code])) continue;
+    $f = 'vathmologia/' . slugify($name) . '.html';
+    file_put_contents("$out/$f", render(['p' => 'table', 'lg' => $code]));
+    $urls[] = SITE_URL . '/' . substr($f, 0, -5);
+}
 // σελίδα για κάθε αγώνα που εμφανίζεται σε τουλάχιστον μία αγορά
 $matchPages = array_filter(analyse($data, 'all', null, true), function ($t) {
     foreach (MARKETS as $k => $info) if ($t['m'][$k]['conf'] >= $info['min']) return true;
