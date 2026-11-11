@@ -18,18 +18,18 @@ function render(array $get): string {
     ob_start();
     include __DIR__ . '/index.php';
     $html = ob_get_clean();
-    foreach (['method', 'privacy', 'terms', 'results', 'over25', 'gg'] as $p) $html = str_replace('href="?p=' . $p . '"', 'href="/' . $p . '"', $html);
+    foreach (['method', 'privacy', 'terms', 'results', 'over25', 'gg', 'live'] as $p) $html = str_replace('href="?p=' . $p . '"', 'href="/' . $p . '"', $html);
     return str_replace('href="./"', 'href="/"', $html);
 }
 
-$pages = ['home' => 'index.html', 'over25' => 'over25.html', 'gg' => 'gg.html', 'method' => 'method.html', 'privacy' => 'privacy.html', 'terms' => 'terms.html', 'results' => 'results.html'];
+$pages = ['home' => 'index.html', 'over25' => 'over25.html', 'gg' => 'gg.html', 'method' => 'method.html', 'privacy' => 'privacy.html', 'terms' => 'terms.html', 'results' => 'results.html', 'live' => 'live.html'];
 $urls = [];
 foreach ($pages as $p => $file) {
     file_put_contents("$out/$file", render(['p' => $p]));
     $urls[] = SITE_URL . '/' . ($file === 'index.html' ? '' : basename($file, '.html'));
 }
 // σελίδα για κάθε αγώνα που εμφανίζεται σε τουλάχιστον μία αγορά
-$matchPages = array_filter(analyse($data, 'all'), function ($t) {
+$matchPages = array_filter(analyse($data, 'all', null, true), function ($t) {
     foreach (MARKETS as $k => $info) if ($t['m'][$k]['conf'] >= $info['min']) return true;
     return false;
 });
@@ -59,6 +59,9 @@ file_put_contents("$out/share/index.html", '<!DOCTYPE html><html lang="el"><head
 </body></html>');
 
 copy(__DIR__ . '/ads.txt', "$out/ads.txt");
+// Cloudflare Pages Functions (π.χ. /api/live)
+@mkdir("$out/functions/api", 0755, true);
+foreach (glob(__DIR__ . '/functions/api/*.js') as $f) copy($f, "$out/functions/api/" . basename($f));
 @mkdir("$out/assets", 0755, true);
 copy(__DIR__ . '/_headers', "$out/_headers");
 foreach (glob(__DIR__ . '/assets/*') as $a) copy($a, "$out/assets/" . basename($a));

@@ -2,14 +2,14 @@
 require_once __DIR__ . '/lib.php';
 
 $page = $_GET['p'] ?? 'home';
-if (!in_array($page, ['home', 'over25', 'gg', 'method', 'privacy', 'terms', 'match', 'results'], true)) $page = 'home';
+if (!in_array($page, ['home', 'over25', 'gg', 'method', 'privacy', 'terms', 'match', 'results', 'live'], true)) $page = 'home';
 
 $LIST_PAGES = ['home' => 'o15', 'over25' => 'o25', 'gg' => 'gg'];
 $mk = $LIST_PAGES[$page] ?? 'o15';
 $ML = MARKETS[$mk]['label'];
 $data = load_data();
-$tips = isset($LIST_PAGES[$page]) ? analyse($data, $mk) : ($page === 'match' ? analyse($data, 'all') : []);
-$top3 = array_slice($tips, 0, 3);
+$tips = isset($LIST_PAGES[$page]) ? analyse($data, $mk, null, true) : ($page === 'match' ? analyse($data, 'all', null, true) : []);
+$top3 = array_slice(array_values(array_filter($tips, fn($t) => $t['ts'] > time())), 0, 3);
 $stats = track_stats(load_tracked(), 30, $mk === 'o15' ? 70 : 55, $mk);
 $M = null;
 if ($page === 'match') {
@@ -29,6 +29,7 @@ $titles = [
     'results' => 'Ιστορικό Επιτυχίας Προγνωστικών Over 1.5, Over 2.5, Γκολ-Γκολ | ' . SITE_NAME,
     'over25'  => 'Over 2.5 Προγνωστικά Σήμερα — Αγώνες με 3+ Γκολ | ' . SITE_NAME,
     'gg'      => 'Γκολ-Γκολ (GG) Προγνωστικά Σήμερα — Σκοράρουν και οι δύο | ' . SITE_NAME,
+    'live'    => 'Live Score Σήμερα — Ζωντανά Αποτελέσματα & Προγνωστικά | ' . SITE_NAME,
 ];
 $HERO = [
     'o15' => ['Over 1.5 γκολ — τα πιο σίγουρα παιχνίδια της αγωνιστικής', 'για 2+ γκολ'],
@@ -36,8 +37,9 @@ $HERO = [
     'gg'  => ['Γκολ-Γκολ — σκοράρουν και οι δύο ομάδες', 'για γκολ και από τις δύο ομάδες'],
 ];
 $desc = $page === 'over25' ? 'Δωρεάν προγνωστικά Over 2.5 γκολ για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε 8 ευρωπαϊκά πρωταθλήματα.'
+     : ($page === 'live' ? 'Live score για Premier League, La Liga, Serie A, Bundesliga, Ligue 1 και άλλα, μαζί με τα προγνωστικά Over 1.5, Over 2.5 και Γκολ-Γκολ για κάθε αγώνα.'
      : ($page === 'gg' ? 'Δωρεάν προγνωστικά Γκολ-Γκολ (GG) για σήμερα και αύριο, με βάση τα τελευταία 3 παιχνίδια κάθε ομάδας σε 8 ευρωπαϊκά πρωταθλήματα.'
-     : 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.');
+     : 'Δωρεάν προγνωστικά Over 1.5 γκολ για σήμερα και αύριο. Ανάλυση των τελευταίων 3 αγώνων κάθε ομάδας σε Premier League, Serie A, La Liga, Bundesliga και άλλα.'));
 $canon = SITE_URL . ($page === 'home' ? '/' : '/' . $page);
 if ($M) {
     $mn = $M['home']['g'] . ' – ' . $M['away']['g'];
@@ -130,6 +132,19 @@ select{background:var(--card);color:var(--tx);border:1px solid var(--line2);bord
 .lg{display:inline-flex;align-items:center;gap:6px;color:var(--tx)}
 .lg i{width:6px;height:6px;border-radius:2px;background:var(--blue)}
 .when{font-family:var(--mono)}
+.lv{margin-left:auto;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:800;font-family:ui-monospace,Menlo,monospace;background:rgba(255,255,255,.06);color:var(--tx);white-space:nowrap}
+.lv.on{background:rgba(255,77,77,.14);color:#ff6b6b}.lv.on::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff4d4d;margin-right:6px;vertical-align:1px;animation:pl 1.2s infinite}
+.lv.win{background:var(--acc-bg);color:var(--acc)}.lv.lose{background:rgba(255,77,77,.1);color:#ff8080}
+.lv:not([hidden])+.badge{margin-left:8px}
+@keyframes pl{50%{opacity:.25}}
+.ldot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4d4d;margin-right:6px;vertical-align:1px;animation:pl 1.6s infinite}
+.lvt{width:100%;border-collapse:collapse;margin:8px 0 26px;table-layout:fixed}.lvt .p{width:230px}.lvt tr.lvon .t{color:#ff6b6b;font-weight:700}h1 .ldot{width:12px;height:12px;margin-right:12px;vertical-align:6px}.lvt .h,.lvt .a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lvt td{padding:11px 10px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+.lvt .t{color:var(--mut);font-family:ui-monospace,Menlo,monospace;width:58px}.lvt .h{text-align:right;font-weight:600}.lvt .a{font-weight:600}
+.lvt .s{text-align:center;width:96px}.lvt .s b{font-family:ui-monospace,Menlo,monospace;font-size:15px}.lvt .p{text-align:right;white-space:nowrap}
+.lvt .p a{display:inline-block;margin-left:4px;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;background:var(--card);color:var(--mut)}
+.lvt .p a.hi{background:var(--acc-bg);color:var(--acc)}.lvt tr.lvon .s b{color:#ff6b6b}
+.lvh{font-size:15px;margin:22px 0 4px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+@media(max-width:600px){.lvt .p{display:none;width:0}.lvt td{padding:10px 4px;font-size:13px}.lvt .t{width:44px}}
 .badge{margin-left:auto;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.02em}
 .badge.top{background:var(--gold-bg);color:var(--gold)}
 .badge.strong{background:var(--acc-bg);color:var(--acc)}
@@ -253,6 +268,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
     <a href="./" class="<?= $page === 'home' ? 'on' : '' ?>">Over 1.5</a>
     <a href="?p=over25" class="<?= $page === 'over25' ? 'on' : '' ?>">Over 2.5</a>
     <a href="?p=gg" class="<?= $page === 'gg' ? 'on' : '' ?>">Γκολ-Γκολ</a>
+    <a href="?p=live" class="<?= $page === 'live' ? 'on' : '' ?>"><span class="ldot"></span>Live</a>
     <a href="?p=results" class="<?= $page === 'results' ? 'on' : '' ?>">Ιστορικό</a>
     <a href="?p=method" class="<?= $page === 'method' ? 'on' : '' ?>">Μεθοδολογία</a>
   </nav>
@@ -297,6 +313,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
         <div class="c-top">
           <span class="lg"><i></i><?= e($t['leagueName']) ?></span>
           <span class="when"><?= e(gr_day($t['ts'])) ?> · <?= date('H:i', $t['ts']) ?></span>
+          <?= live_badge($t, $mk) ?>
           <span class="badge <?= $tc ?>"><?= e($tl) ?></span>
         </div>
         <div class="c-body">
@@ -366,7 +383,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <div class="wrap page" style="max-width:860px">
   <div class="crumbs"><a href="./">Προγνωστικά</a> › <?= e($t['leagueName']) ?> › <?= e($hn) ?> – <?= e($an) ?></div>
   <h1><?= e($hn) ?> – <?= e($an) ?>: Προγνωστικά</h1>
-  <p style="color:var(--mut)"><?= e($t['home']['n']) ?> – <?= e($t['away']['n']) ?> · <?= e($t['leagueName']) ?> · <?= ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][(int)date('w', $t['ts'])] ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας)</p>
+  <p style="color:var(--mut)"><?= e($t['home']['n']) ?> – <?= e($t['away']['n']) ?> · <?= e($t['leagueName']) ?> · <?= ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][(int)date('w', $t['ts'])] ?> <?= date('d/m/Y H:i', $t['ts']) ?> (ώρα Ελλάδας) <?= live_badge($t, 'o15') ?></p>
   <div class="mhead">
     <div class="team home"><?= crest($t['home']) ?><div class="nm"><?= e($hn) ?></div><div class="hint">Γηπεδούχος</div></div>
     <div class="ring" style="--p:<?= $t['conf'] ?>;--rc:<?= $rc ?>"><div><span><b><?= $t['conf'] ?>%</b><small>OVER 1.5</small></span></div></div>
@@ -405,6 +422,37 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
   <p style="font-size:12px;color:var(--mut2);margin-top:18px">Στατιστική εκτίμηση, όχι εγγύηση. 21+ | Παίξε υπεύθυνα.</p>
   <script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org', '@type' => 'SportsEvent', 'name' => "$hn vs $an", 'startDate' => date('c', $t['ts']), 'sport' => 'Soccer', 'homeTeam' => ['@type' => 'SportsTeam', 'name' => $hn], 'awayTeam' => ['@type' => 'SportsTeam', 'name' => $an], 'location' => ['@type' => 'Place', 'name' => $hn . ' stadium'], 'eventStatus' => 'https://schema.org/EventScheduled'], JSON_UNESCAPED_UNICODE) ?></script>
+</div>
+
+<?php elseif ($page === 'live'):
+  $byId = []; foreach (analyse($data, 'all', 0, true) as $x) $byId[$x['id']] = $x;
+  $days = [];
+  foreach ($data['leagues'] as $code => $ms) foreach ($ms as $m) {
+    if (!in_array($m['status'], ['SCHEDULED', 'TIMED', 'IN_PLAY', 'PAUSED', 'FINISHED'], true)) continue;
+    $ts = strtotime($m['utc']); if ($ts < strtotime('today')) continue;
+    $days[date('Y-m-d', $ts)][] = $m + ['lg' => $code, 'ts' => $ts];
+  }
+  ksort($days); $days = array_slice($days, 0, 2, true); ?>
+<div class="wrap page" style="max-width:980px">
+  <h1><span class="ldot"></span>Live score</h1>
+  <p>Ζωντανά σκορ για τα <?= count(LEAGUES) ?> πρωταθλήματα που αναλύουμε, μαζί με τις πιθανότητές μας για κάθε αγώνα. Ανανεώνεται αυτόματα κάθε λεπτό, με μικρή καθυστέρηση.</p>
+  <?= ad_slot(ADSENSE_SLOT_TOP, 'ad-top') ?>
+  <?php if (!$days): ?><div class="empty">Δεν υπάρχουν προγραμματισμένοι αγώνες τις επόμενες ημέρες.</div><?php endif; ?>
+  <?php foreach ($days as $day => $ms): usort($ms, fn($a, $b) => $a['ts'] <=> $b['ts'] ?: strcmp($a['lg'], $b['lg'])); ?>
+  <h2 class="lvh"><?= e(gr_day(strtotime($day))) ?> <?= date('d/m', strtotime($day)) ?></h2>
+  <div style="overflow-x:auto"><table class="lvt">
+  <?php foreach ($ms as $m): $live = in_array($m['status'], ['IN_PLAY', 'PAUSED'], true); $t = $byId[$m['id']] ?? null; ?>
+    <tr data-id="<?= (int)$m['id'] ?>" data-ts="<?= $m['ts'] ?>" class="<?= $live ? 'lvon' : '' ?>">
+      <td class="t"><?= $m['status'] === 'FINISHED' ? 'Τελ.' : ($m['status'] === 'PAUSED' ? 'Ημ.' : ($live ? 'LIVE' : date('H:i', $m['ts']))) ?></td>
+      <td class="h"><?= e(gr_team($m['h']['n'])) ?></td>
+      <td class="s"><b><?= $m['hg'] !== null && $m['status'] !== 'TIMED' && $m['status'] !== 'SCHEDULED' ? $m['hg'] . ' - ' . $m['ag'] : '–' ?></b><div style="font-size:11px;color:var(--mut2)"><?= e(LEAGUES[$m['lg']] ?? $m['lg']) ?></div></td>
+      <td class="a"><?= e(gr_team($m['a']['n'])) ?></td>
+      <td class="p"><?php if ($t): foreach (['o15' => 'O1.5', 'o25' => 'O2.5', 'gg' => 'GG'] as $k => $lb): $c = $t['m'][$k]['conf']; ?><a href="<?= e(match_url($t)) ?>" class="<?= $c >= ($k === 'o15' ? 75 : 65) ? 'hi' : '' ?>"><?= $lb ?> <?= $c ?>%</a><?php endforeach; endif; ?></td>
+    </tr>
+  <?php endforeach; ?></table></div>
+  <?php endforeach; ?>
+  <?php if (TELEGRAM_URL): ?><div class="cta-tg"><div><b>Θες τα tips κάθε πρωί στο κινητό;</b><p>Δωρεάν κανάλι Telegram με τις ισχυρότερες επιλογές και τα αποτελέσματα.</p></div><a class="btn-tg" href="<?= e(TELEGRAM_URL) ?>" target="_blank" rel="noopener">Μπες στο κανάλι</a></div><?php endif; ?>
+  <?= ad_slot(ADSENSE_SLOT_BOTTOM) ?>
 </div>
 
 <?php elseif ($page === 'results'): $tr = load_tracked();
@@ -473,7 +521,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 <footer><div class="wrap">
   <div class="ft">
     <div class="rg"><span class="r18">21+</span><span>Παίξε υπεύθυνα. Το στοίχημα ενέχει κίνδυνο εθισμού και απώλειας περιουσίας. Γραμμή βοήθειας: 1114.</span></div>
-    <nav><a href="?p=over25">Over 2.5</a><a href="?p=gg">Γκολ-Γκολ</a><a href="?p=results">Ιστορικό</a><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
+    <nav><a href="?p=live">Live score</a><a href="?p=over25">Over 2.5</a><a href="?p=gg">Γκολ-Γκολ</a><a href="?p=results">Ιστορικό</a><a href="?p=method">Μεθοδολογία</a><a href="?p=terms">Όροι & Υπεύθυνο Παιχνίδι</a><a href="?p=privacy">Απόρρητο</a></nav>
   </div>
   <p class="legal">© <?= date('Y') ?> <?= e(SITE_NAME) ?> · Τα προγνωστικά είναι στατιστικές εκτιμήσεις, όχι εγγυήσεις. Δεδομένα: football-data.org · Ορισμένοι σύνδεσμοι είναι διαφημιστικοί.</p>
 </div></footer>
@@ -499,6 +547,29 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
   document.getElementById('mn').onchange=function(){st.m=+this.value;apply()};
   apply(); initCk();
   function initCk(){try{if(!localStorage.getItem('ck')){var k=document.getElementById('ck');k.style.display='flex';document.getElementById('ckok').onclick=function(){localStorage.setItem('ck',1);k.style.display='none'}}}catch(e){}}
+})();
+</script>
+<script>
+/* Live σκορ: ρωτά το /api/live κάθε λεπτό όσο κάποιος αγώνας της σελίδας είναι σε εξέλιξη */
+(function(){
+  var els=[].slice.call(document.querySelectorAll('[data-id][data-ts]')); if(!els.length||!window.fetch) return;
+  function hit(mk,h,a){return mk==='o25'?h+a>=3:(mk==='gg'?(h>0&&a>0):h+a>=2)}
+  function want(){var n=Date.now()/1e3;return els.some(function(e){var t=+e.dataset.ts;return e.dataset.done!=='1'&&n>t-300&&n<t+3*3600})}
+  function upd(d){els.forEach(function(e){
+    var m=d.m[e.dataset.id]; if(!m||m[1]==null) return;
+    var st=m[0],h=m[1],a=m[2],on=st==='IN_PLAY'||st==='PAUSED',fin=st==='FINISHED',min=m[3]?m[3]+"' ":'';
+    if(!on&&!fin) return; if(fin) e.dataset.done='1';
+    if(e.classList.contains('lv')){var ok=hit(e.dataset.mk,h,a);e.hidden=false;
+      if(fin){e.className='lv '+(ok?'win':'lose');e.textContent='Τελικό '+h+'-'+a+(ok?' ✅':' ❌')}
+      else{e.className='lv on';e.textContent=(st==='PAUSED'?'Ημίχρ. ':'LIVE '+min)+h+'-'+a+(ok?' ✅':'')}
+    }else{var s=e.querySelector('.s b'),t=e.querySelector('.t');if(s)s.textContent=h+' - '+a;
+      e.classList.toggle('lvon',on);if(t)t.textContent=fin?'Τελ.':(st==='PAUSED'?'Ημ.':(m[3]?m[3]+"'":'LIVE'))}
+  })}
+  function go(){
+    if(want()&&!document.hidden) fetch('/api/live').then(function(r){return r.ok?r.json():null}).then(function(d){if(d&&d.m)upd(d)}).catch(function(){});
+    setTimeout(go,60000);
+  }
+  go();
 })();
 </script>
 </body>

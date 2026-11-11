@@ -105,15 +105,17 @@ function team_stats(array $games): array {
  *  50% = Poisson πιθανότητα από τα αναμενόμενα γκολ (επίθεση ομάδας + άμυνα αντιπάλου)
  * $mk: 'o15' | 'o25' | 'gg' | 'all' (όλοι οι αγώνες, χωρίς φίλτρο — βασικά πεδία = Over 1.5)
  */
-function analyse(array $data, string $mk = 'o15', ?int $min = null): array {
-    $now = gmdate('Y-m-d\TH:i:s\Z');
+function analyse(array $data, string $mk = 'o15', ?int $min = null, bool $withToday = false): array {
+    // $withToday: κρατά και τους σημερινούς αγώνες που ξεκίνησαν/τελείωσαν (για live σκορ στο site)
+    $now = gmdate('Y-m-d\TH:i:s\Z', $withToday ? strtotime('today') : time());
+    $okSt = $withToday ? ['SCHEDULED', 'TIMED', 'IN_PLAY', 'PAUSED', 'FINISHED'] : ['SCHEDULED', 'TIMED'];
     $until = gmdate('Y-m-d\TH:i:s\Z', time() + DAYS_AHEAD * 86400);
     $use = $mk === 'all' ? 'o15' : $mk;
     $min ??= $mk === 'all' ? 0 : MARKETS[$mk]['min'];
     $tips = [];
     foreach ($data['leagues'] as $code => $matches) {
         foreach ($matches as $m) {
-            if (!in_array($m['status'], ['SCHEDULED', 'TIMED'], true)) continue;
+            if (!in_array($m['status'], $okSt, true)) continue;
             if ($m['utc'] < $now || $m['utc'] > $until) continue;
             $h3 = team_last3($matches, $m['h']['id'], $m['utc']);
             $a3 = team_last3($matches, $m['a']['id'], $m['utc']);
@@ -141,11 +143,24 @@ function analyse(array $data, string $mk = 'o15', ?int $min = null): array {
                 'ts' => strtotime($m['utc']), 'home' => $home, 'away' => $away,
                 'H' => $H, 'A' => $A, 'xg' => $l, 'mk' => $use, 'm' => $mkt,
                 'hits' => $mkt[$use]['hits'], 'conf' => $mkt[$use]['conf'], 'fair' => $mkt[$use]['fair'],
+                'st' => $m['status'], 'hg' => $m['hg'], 'ag' => $m['ag'],
             ];
         }
     }
     usort($tips, fn($x, $y) => $y['conf'] <=> $x['conf'] ?: $x['ts'] <=> $y['ts']);
     return $tips;
+}
+
+/** Ετικέτα live/τελικού σκορ για μια κάρτα (αρχική τιμή· το JS την ανανεώνει κάθε λεπτό). */
+function live_badge(array $t, string $mk): string {
+    $st = $t['st'] ?? 'TIMED';
+    $attr = ' data-id="' . (int)$t['id'] . '" data-ts="' . (int)$t['ts'] . '" data-mk="' . e($mk) . '"';
+    if (in_array($st, ['IN_PLAY', 'PAUSED', 'FINISHED'], true) && $t['hg'] !== null) {
+        $hit = market_hit($mk, $t['hg'], $t['ag']);
+        if ($st === 'FINISHED') return '<span class="lv ' . ($hit ? 'win' : 'lose') . '"' . $attr . '>Τελικό ' . $t['hg'] . '-' . $t['ag'] . ($hit ? ' ✅' : ' ❌') . '</span>';
+        return '<span class="lv on"' . $attr . '>' . ($st === 'PAUSED' ? 'Ημίχρ.' : 'LIVE') . ' ' . $t['hg'] . '-' . $t['ag'] . ($hit ? ' ✅' : '') . '</span>';
+    }
+    return '<span class="lv"' . $attr . ' hidden></span>';
 }
 
 function tier(int $c): array {
