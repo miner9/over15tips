@@ -11,7 +11,7 @@ define('SITE_URL', getenv('SITE_URL') ?: 'https://over15tips.pages.dev');
 const SITE_EMAIL  = 'info@example.gr';
 const SITE_TAGLINE = 'Προγνωστικά Over 1.5 γκολ με βάση τα τελευταία 3 παιχνίδια';
 
-// 3) Πρωταθλήματα (free tier football-data.org). Max 9 για το όριο 10 κλήσεων/λεπτό.
+// 3) Πρωταθλήματα (free tier football-data.org). Max 9 για το όριο 10 κλήσεων/λεπτό (τώρα 9).
 const LEAGUES = [
     'PL'  => 'Premier League',
     'PD'  => 'La Liga',
@@ -21,6 +21,7 @@ const LEAGUES = [
     'DED' => 'Eredivisie',
     'PPL' => 'Primeira Liga',
     'ELC' => 'Championship',
+    'CL'  => 'Champions League',
 ];
 
 const DAYS_AHEAD   = 14;     // πόσες μέρες μπροστά (καλύπτει διακοπές εθνικών)

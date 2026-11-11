@@ -1,8 +1,8 @@
 // Cloudflare Pages Function: GET /api/live
-// Επιστρέφει τα σημερινά σκορ των 8 πρωταθλημάτων ως {ts, m:{id:[status, home, away, minute]}}.
+// Επιστρέφει τα σημερινά σκορ των πρωταθλημάτων μας ως {ts, m:{id:[status, home, away, minute]}}.
 // Το API key μένει κρυφό στο Cloudflare (Settings → Variables and Secrets → FOOTBALL_API_KEY).
 // Cache 60" ώστε όσοι επισκέπτες κι αν μπουν, να γίνεται το πολύ 1 κλήση/λεπτό στο football-data.org.
-const COMPS = 'PL,PD,SA,BL1,FL1,DED,PPL,ELC';
+const COMPS = 'PL,PD,SA,BL1,FL1,DED,PPL,ELC,CL';
 const TTL = 60;
 let mem = null; // cache μέσα στο ίδιο isolate
 

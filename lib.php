@@ -113,12 +113,15 @@ function analyse(array $data, string $mk = 'o15', ?int $min = null, bool $withTo
     $use = $mk === 'all' ? 'o15' : $mk;
     $min ??= $mk === 'all' ? 0 : MARKETS[$mk]['min'];
     $tips = [];
+    $all = $data['leagues'] ? array_merge(...array_values($data['leagues'])) : [];
     foreach ($data['leagues'] as $code => $matches) {
+        // Στο Champions League η φόρμα μετράει από όλες τις διοργανώσεις (πρωτάθλημα + CL)
+        $pool = $code === 'CL' ? $all : $matches;
         foreach ($matches as $m) {
             if (!in_array($m['status'], $okSt, true)) continue;
             if ($m['utc'] < $now || $m['utc'] > $until) continue;
-            $h3 = team_last3($matches, $m['h']['id'], $m['utc']);
-            $a3 = team_last3($matches, $m['a']['id'], $m['utc']);
+            $h3 = team_last3($pool, $m['h']['id'], $m['utc']);
+            $a3 = team_last3($pool, $m['a']['id'], $m['utc']);
             if (count($h3) < 3 || count($a3) < 3) continue;
             $H = team_stats($h3); $A = team_stats($a3);
             $lh = ($H['avgFor'] + $A['avgAg']) / 2;

@@ -52,6 +52,14 @@ const TEAMS_GR = [
     'Famalicão' => 'Φαμαλικάο', 'Gil Vicente' => 'Ζιλ Βιθέντε', 'Estoril' => 'Εστορίλ', 'Rio Ave' => 'Ρίο Άβε',
     'Moreirense' => 'Μορεϊρένσε', 'Arouca' => 'Αρούκα', 'Casa Pia' => 'Κάζα Πία', 'Santa Clara' => 'Σάντα Κλάρα',
     'Nacional' => 'Νασιονάλ', 'Estrela' => 'Εστρέλα', 'AVS' => 'AVS', 'Tondela' => 'Τοντέλα', 'Alverca' => 'Αλβέρκα',
+    // Champions League (ομάδες εκτός των 8 πρωταθλημάτων)
+    'Olympiacos' => 'Ολυμπιακός', 'Olympiakos' => 'Ολυμπιακός', 'PAOK' => 'ΠΑΟΚ', 'AEK Athens' => 'ΑΕΚ', 'Panathinaikos' => 'Παναθηναϊκός',
+    'Galatasaray' => 'Γαλατασαράι', 'Fenerbahçe' => 'Φενερμπαχτσέ', 'Celtic' => 'Σέλτικ', 'Rangers' => 'Ρέιντζερς',
+    'Club Brugge' => 'Μπριζ', 'Union SG' => 'Ουνιόν Σεν Ζιλουάζ', 'Anderlecht' => 'Άντερλεχτ', 'Slavia Praha' => 'Σλάβια Πράγας',
+    'Sparta Praha' => 'Σπάρτα Πράγας', 'FC København' => 'Κοπεγχάγη', 'Copenhagen' => 'Κοπεγχάγη', 'Bodø/Glimt' => 'Μπόντο/Γκλιμτ',
+    'Qarabağ' => 'Καραμπάχ', 'Kairat' => 'Καϊράτ', 'Pafos' => 'Πάφος', 'Shakhtar' => 'Σαχτάρ', 'Dinamo Zagreb' => 'Ντινάμο Ζάγκρεμπ',
+    'Red Bull Salzburg' => 'Σάλτσμπουργκ', 'Sturm Graz' => 'Στουρμ Γκρατς', 'Young Boys' => 'Γιανγκ Μπόις', 'Crvena Zvezda' => 'Ερυθρός Αστέρας',
+    'Ferencváros' => 'Φερεντσβάρος', 'Midtjylland' => 'Μίντιλαντ', 'Malmö FF' => 'Μάλμε', 'Basel' => 'Βασιλεία',
 ];
 
 function gr_team(string $n): string { return TEAMS_GR[$n] ?? $n; }
