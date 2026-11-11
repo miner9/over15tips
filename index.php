@@ -201,7 +201,8 @@ select{background:var(--card);color:var(--tx);border:1px solid var(--line2);bord
 /* sidebar */
 .side{display:flex;flex-direction:column;gap:16px;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;scrollbar-width:none}
 @media(max-width:980px){.side{position:static;max-height:none}}
-@media(min-width:1500px){.wrap.main{max-width:none;grid-template-columns:minmax(0,1fr) minmax(0,1000px) minmax(0,1fr)}.main>section{grid-column:2}.main>aside{grid-column:3;width:100%;max-width:360px}}
+@media(min-width:1500px){.lst header .wrap,.lst .hero .wrap,.lst footer .wrap{max-width:none;padding-left:calc(50% - 500px);padding-right:max(28px,calc(50% - 892px))}
+.wrap.main{max-width:none;grid-template-columns:minmax(0,1fr) minmax(0,1000px) minmax(0,1fr)}.main>section{grid-column:2}.main>aside{grid-column:3;width:100%;max-width:360px}}
 .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
 .box h3{font-size:14px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
 .box .s{font-size:12px;color:var(--mut);margin-bottom:14px}
@@ -270,7 +271,7 @@ footer{border-top:1px solid var(--line);background:var(--bg2);padding:32px 0;fon
 #ck a{text-decoration:underline}
 </style>
 </head>
-<body>
+<body class="<?= isset($LIST_PAGES[$page]) ? 'lst' : '' ?>">
 <header><div class="wrap hd">
   <a href="./" class="logo"><span class="logo-mark">1.5</span><span><?= preg_replace('/(\d[\d.]*)/', '<b>$1</b>', e(SITE_NAME)) ?></span></a>
   <nav>
