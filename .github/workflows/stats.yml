@@ -1,0 +1,19 @@
+name: Stats (επισκεψιμότητα)
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Ημέρες'
+        default: '7'
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_ID: ef28f25e266959dd69ffa9bf70027a6d   # δεν είναι μυστικό (μόνο αναγνωριστικό)
+      CF_SITE_TAG: 983a86799f8d4e31b216d00817a320b3     # δημόσιο (υπάρχει στο beacon του site)
+    steps:
+      - uses: actions/checkout@v4
+      - run: php stats.php "${{ inputs.days || '7' }}"
