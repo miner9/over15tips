@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://over15tips.com/sitemap.xml
