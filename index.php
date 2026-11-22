@@ -100,8 +100,9 @@ header{position:sticky;top:0;z-index:20;background:rgba(10,14,19,.86);backdrop-f
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.02em}
 .logo-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),#13a35a);display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:700;color:#04140b}
 .logo b{color:var(--acc)}
-nav{display:flex;gap:4px;flex:1}
-nav a{padding:8px 14px;border-radius:8px;color:var(--mut);font-weight:600;font-size:14px}
+nav{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+nav a{padding:8px 14px;border-radius:8px;color:var(--mut);font-weight:600;font-size:14px;white-space:nowrap}
+.logo{white-space:nowrap}@media(max-width:1100px){nav a{padding:8px 10px}}
 nav a:hover,nav a.on{color:var(--tx);background:var(--card)}
 .btn-tg{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:9px;background:#229ED9;color:#fff;font-weight:700;font-size:14px}
 .btn-tg svg{width:16px;height:16px}
