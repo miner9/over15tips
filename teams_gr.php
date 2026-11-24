@@ -53,7 +53,7 @@ const TEAMS_GR = [
     'Moreirense' => 'Μορεϊρένσε', 'Arouca' => 'Αρούκα', 'Casa Pia' => 'Κάζα Πία', 'Santa Clara' => 'Σάντα Κλάρα',
     'Nacional' => 'Νασιονάλ', 'Estrela' => 'Εστρέλα', 'AVS' => 'AVS', 'Tondela' => 'Τοντέλα', 'Alverca' => 'Αλβέρκα',
     // Champions League (ομάδες εκτός των 8 πρωταθλημάτων)
-    'Olympiacos' => 'Ολυμπιακός', 'Olympiakos' => 'Ολυμπιακός', 'PAOK' => 'ΠΑΟΚ', 'AEK Athens' => 'ΑΕΚ', 'Panathinaikos' => 'Παναθηναϊκός',
+    'Olympiacos' => 'Ολυμπιακός', 'Olympiakos' => 'Ολυμπιακός', 'PAOK' => 'ΠΑΟΚ', 'AEK Athens' => 'ΑΕΚ', 'PAE AEK' => 'ΑΕΚ', 'AEK' => 'ΑΕΚ', 'Sl. Bratislava' => 'Σλόβαν Μπρατισλάβας', 'Slovan Bratislava' => 'Σλόβαν Μπρατισλάβας', 'LASK' => 'ΛΑΣΚ', 'Panathinaikos' => 'Παναθηναϊκός',
     'Galatasaray' => 'Γαλατασαράι', 'Fenerbahçe' => 'Φενερμπαχτσέ', 'Celtic' => 'Σέλτικ', 'Rangers' => 'Ρέιντζερς',
     'Club Brugge' => 'Μπριζ', 'Union SG' => 'Ουνιόν Σεν Ζιλουάζ', 'Anderlecht' => 'Άντερλεχτ', 'Slavia Praha' => 'Σλάβια Πράγας',
     'Sparta Praha' => 'Σπάρτα Πράγας', 'FC København' => 'Κοπεγχάγη', 'Copenhagen' => 'Κοπεγχάγη', 'Bodø/Glimt' => 'Μπόντο/Γκλιμτ',
